@@ -13,10 +13,10 @@ from sqlalchemy.orm import Session
 
 from app.auth import (
     create_session,
+    csrf_token_for_request,
     current_user,
     delete_session,
     hash_password,
-    new_csrf_token,
     normalize_username,
     set_csrf_cookie,
     valid_csrf_token,
@@ -77,7 +77,7 @@ def about_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
 def account_response(
     request: Request, user: User, *, notice: str = "", error: str = "", status_code: int = 200
 ) -> HTMLResponse:
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="account.html",
@@ -204,7 +204,7 @@ def delete_account(
 def settings_response(
     request: Request, user: User, *, notice: str = "", error: str = ""
 ) -> HTMLResponse:
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="settings.html",
@@ -279,7 +279,7 @@ def auth_form(
     full_name: str = "",
     status_code: int = 200,
 ) -> HTMLResponse:
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name=template_name,

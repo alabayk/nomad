@@ -17,6 +17,28 @@ def csrf_from(response) -> str:
     return match.group(1)
 
 
+def test_static_assets_are_https_proxy_safe() -> None:
+    with TestClient(app) as client:
+        page = client.get("/about")
+        assert 'href="/static/css/app.css' in page.text
+        assert 'http://testserver/static/' not in page.text
+
+
+def test_opening_another_auth_form_does_not_expire_the_first() -> None:
+    with TestClient(app) as client:
+        first_page = client.get("/login")
+        first_token = csrf_from(first_page)
+        second_page = client.get("/register")
+        assert csrf_from(second_page) == first_token
+
+        response = client.post(
+            "/login",
+            data={"username": "missing", "password": "wrong-password", "csrf_token": first_token},
+        )
+        assert response.status_code == 401
+        assert "Форма устарела" not in response.text
+
+
 def test_register_logout_and_login(test_session_factory) -> None:
     with TestClient(app) as client:
         page = client.get("/register")

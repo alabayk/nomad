@@ -130,6 +130,11 @@ def new_csrf_token() -> str:
     return secrets.token_urlsafe(24)
 
 
+def csrf_token_for_request(request: Request) -> str:
+    """Reuse the browser token so another open form does not become stale."""
+    return request.cookies.get(settings.csrf_cookie_name) or new_csrf_token()
+
+
 def set_csrf_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         settings.csrf_cookie_name,

@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import current_user, new_csrf_token, set_csrf_cookie, valid_csrf_token
+from app.auth import csrf_token_for_request, current_user, set_csrf_cookie, valid_csrf_token
 from app.config import settings
 from app.database import get_db
 from app.geocoding import GeocodeResult, GeocodingError, geocode_place, reverse_geocode
@@ -68,7 +68,7 @@ def _form_response(
     values: dict[str, object] | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="memory_form.html",
@@ -327,7 +327,7 @@ def dashboard(
         }
         for item in memories
     ]
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="dashboard.html",
@@ -459,7 +459,7 @@ def memory_detail(
         return templates.TemplateResponse(
             request=request, name="not_found.html", context={"user": user}, status_code=404
         )
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="memory_detail.html",
@@ -638,7 +638,7 @@ def visited_countries_page(
     available_countries = [
         (code, name) for code, name in COUNTRY_CHOICES if code not in visited_codes
     ]
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="countries.html",
@@ -735,7 +735,7 @@ def wishlist_countries_page(
     available_countries = [
         (code, name) for code, name in COUNTRY_CHOICES if code not in selected_codes
     ]
-    csrf_token = new_csrf_token()
+    csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
         name="countries.html",

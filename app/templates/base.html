@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Nomad{% endblock %}</title>
-    <link rel="icon" href="{{ url_for('static', path='/img/nomad-mark.svg') }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}?v=settings2">
+    <link rel="icon" href="/static/img/nomad-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/app.css?v=proxy-fix1">
     {% block head %}{% endblock %}
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Nomad — на главную">
-        <img class="brand-mark" src="{{ url_for('static', path='/img/nomad-mark.svg') }}" alt="" aria-hidden="true">
+        <img class="brand-mark" src="/static/img/nomad-mark.svg" alt="" aria-hidden="true">
         <span class="brand-copy"><strong>Nomad</strong><small>личный путевой архив</small></span>
       </a>
       <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="site-menu" aria-expanded="false">
