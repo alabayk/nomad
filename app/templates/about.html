@@ -6,8 +6,8 @@
   <section class="about-hero">
     <div class="about-intro">
       <p class="eyebrow">{{ 'Personal travel archive' if en else 'Личный путевой архив' }}</p>
-      <h1>{{ 'Places stay' if en else 'Места остаются' }}<br>{{ 'with you.' if en else 'с вами.' }}</h1>
-      <p class="about-lead">{{ 'Nomad turns your journeys into a living map with photos, short stories and future plans.' if en else 'Nomad собирает путешествия не в сухой список, а в живую карту — с фотографиями, короткими историями и планами на будущее.' }}</p>
+      <h1>{{ 'Preserve your memories on the map' if en else 'Увековечьте воспоминания на карте' }}</h1>
+      <p class="about-lead">{{ 'With Nomad, your journeys are no longer just a list of cities and countries, but a living map of memories — with photos, short stories and plans for the future.' if en else 'Благодаря Nomad теперь ваши путешествия — не просто список городов и стран, а целая живая карта воспоминаний — с фотографиями, короткими историями и планами на будущее.' }}</p>
       <div class="about-actions">
         {% if user %}
         <a class="button-link" href="/dashboard">{{ 'Open my map' if en else 'Открыть мою карту' }}</a>
@@ -24,9 +24,9 @@
   </section>
 
   <section class="about-features">
-    <article><span>01</span><h2>{{ 'Mark places' if en else 'Отмечайте места' }}</h2><p>{{ 'Enter a location and Nomad will find its coordinates. You can correct the point manually.' if en else 'Введите название локации — Nomad найдёт её координаты. Если геокодер ошибся, точку можно поставить вручную.' }}</p></article>
-    <article><span>02</span><h2>{{ 'Keep moments' if en else 'Храните моменты' }}</h2><p>{{ 'Add the month, a note and photos. Every memory becomes its own Polaroid card.' if en else 'Добавляйте месяц поездки, заметку и фотографии. Каждое воспоминание становится отдельной полароидной карточкой.' }}</p></article>
-    <article><span>03</span><h2>{{ 'Plan ahead' if en else 'Планируйте дальше' }}</h2><p>{{ 'Keep separate maps for countries you have visited and those you want to explore.' if en else 'Ведите независимую карту стран, которые уже посетили, и тех, куда только собираетесь.' }}</p></article>
+    <article><span>01</span><h2>{{ 'Mark places' if en else 'Отмечайте места' }}</h2><p>{{ 'Enter a location and Nomad will find its coordinates. If we get it wrong, you can place the point manually.' if en else 'Введите название локации — Nomad найдёт её координаты. Если мы вдруг ошиблись, точку можно поставить вручную.' }}</p></article>
+    <article><span>02</span><h2>{{ 'Keep moments' if en else 'Храните моменты' }}</h2><p>{{ 'Every memory becomes its own Polaroid card.' if en else 'Каждое воспоминание становится отдельной полароидной карточкой.' }}</p></article>
+    <article><span>03</span><h2>{{ 'Plan ahead' if en else 'Планируйте дальше' }}</h2><p>{{ 'Build your own collection of visited countries and choose the destinations you are planning to explore.' if en else 'Соберите собственную коллекцию посещённых стран и выберите те направления, куда только собираетесь.' }}</p></article>
   </section>
 
   <section class="about-showcase">
@@ -36,8 +36,8 @@
     </div>
     <div class="showcase-copy">
       <p class="eyebrow">{{ 'Two views of your journeys' if en else 'Два взгляда на путешествия' }}</p>
-      <h2>{{ 'Memories and countries' if en else 'Воспоминания и целые страны' }}</h2>
-      <p>{{ 'Pins show individual places, while the country map reveals the geography of your travels at a glance.' if en else 'Метки на первой карте показывают конкретные города и места. Карта стран помогает одним взглядом увидеть географию ваших поездок.' }}</p>
+      <h2>{{ 'Memory map and country collection' if en else 'Карта воспоминаний и коллекция стран' }}</h2>
+      <p>{{ 'The first map shows specific cities and places, while the second helps you see the geography of your journeys at a glance.' if en else 'Первая карта покажет конкретные города и места, а вторая поможет одним взглядом увидеть географию ваших поездок.' }}</p>
       {% if not user %}<a href="/register">Создать свою карту →</a>{% endif %}
     </div>
   </section>
