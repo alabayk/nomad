@@ -90,6 +90,13 @@
   });
 
   const revealItems = document.querySelectorAll('.reveal');
+  const scrollLink = document.querySelector('.hero-scroll');
+  scrollLink?.addEventListener('click', (event) => {
+    const target = document.querySelector(scrollLink.getAttribute('href'));
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({behavior: 'smooth', block: 'start'});
+  });
   if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const revealObserver = new IntersectionObserver((entries, observer) => {
       entries.forEach((entry) => {
