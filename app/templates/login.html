@@ -7,7 +7,7 @@
   <h1>Войти в Nomad</h1>
   <p class="muted">Продолжите собирать карту своих воспоминаний.</p>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/login" class="auth-form" accept-charset="UTF-8">
+  <form method="post" action="/login" class="auth-form" accept-charset="UTF-8" data-fresh-csrf>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>Логин<input name="username" value="{{ username }}" autocomplete="username" required autofocus></label>
     <label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>

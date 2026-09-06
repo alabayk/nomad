@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -298,6 +298,24 @@ def auth_form(
         status_code=status_code,
     )
     set_csrf_cookie(response, csrf_token)
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
+
+
+def auth_success_response(db: Session, user: User) -> HTMLResponse:
+    response = HTMLResponse("""<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/dashboard"><title>Nomad</title></head><body><a href="/dashboard">Продолжить</a><script>location.replace('/dashboard')</script></body></html>""")
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Location"] = "/dashboard"
+    create_session(db, user, response)
+    return response
+
+
+@app.get("/auth/csrf", include_in_schema=False)
+def fresh_auth_csrf(request: Request) -> JSONResponse:
+    token = csrf_token_for_request(request)
+    response = JSONResponse({"csrf_token": token})
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    set_csrf_cookie(response, token)
     return response
 
 
@@ -325,11 +343,8 @@ async def register(
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     normalized = normalize_username(username)
-    error = None
-    if not valid_csrf_token(request, csrf_token):
-        error = "Форма устарела. Пожалуйста, отправьте её ещё раз."
-    else:
-        error = validate_username(normalized) or validate_password(password)
+    error = None if valid_csrf_token(request, csrf_token) else "Форма устарела. Пожалуйста, отправьте её ещё раз."
+    error = error or validate_username(normalized) or validate_password(password)
     if not error and password != password_confirm:
         error = "Пароли не совпадают."
     cleaned_name = " ".join(full_name.split())
@@ -372,9 +387,7 @@ async def register(
             full_name=cleaned_name, status_code=400
         )
 
-    response = RedirectResponse("/dashboard", status_code=303)
-    create_session(db, user, response)
-    return response
+    return auth_success_response(db, user)
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -394,14 +407,7 @@ def login(
 ) -> HTMLResponse:
     normalized = normalize_username(username)
     if not valid_csrf_token(request, csrf_token):
-        return auth_form(
-            request,
-            "login.html",
-            error="Форма устарела. Пожалуйста, отправьте её ещё раз.",
-            username=normalized,
-            status_code=400,
-        )
-
+        return auth_form(request, "login.html", error="Форма устарела. Пожалуйста, отправьте её ещё раз.", username=normalized, status_code=400)
     user = db.scalar(select(User).where(User.username == normalized))
     if user is None or not verify_password(password, user.password_hash):
         return auth_form(
@@ -412,9 +418,7 @@ def login(
             status_code=401,
         )
 
-    response = RedirectResponse("/dashboard", status_code=303)
-    create_session(db, user, response)
-    return response
+    return auth_success_response(db, user)
 
 
 @app.post("/logout")

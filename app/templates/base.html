@@ -66,6 +66,7 @@
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && siteMenu.classList.contains('open')) setMenu(false);
       });
+      document.querySelectorAll('form[data-fresh-csrf]').forEach(form=>form.addEventListener('submit',async event=>{if(form.dataset.ready)return;event.preventDefault();try{const response=await fetch('/auth/csrf',{cache:'no-store',credentials:'same-origin'}),data=await response.json();form.elements.csrf_token.value=data.csrf_token;form.dataset.ready='1';form.submit()}catch(error){form.dataset.ready='1';form.submit()}}));
     </script>
     {% block scripts %}{% endblock %}
   </body>
