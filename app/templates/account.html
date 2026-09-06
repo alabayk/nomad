@@ -22,7 +22,33 @@
         <button type="submit">{{ 'Save profile' if en else 'Сохранить профиль' }}</button>
       </form>
     </section>
+    <section class="account-panel login-methods-panel"><h2>{{ 'Sign-in methods' if en else 'Способы входа' }}</h2>
+      <div class="login-method">
+        <span class="method-icon google-g">G</span>
+        <div><strong>Google</strong><small>{{ user.email or ('Connected' if en else 'Подключён') if user.google_sub else ('Not connected' if en else 'Не подключён') }}</small></div>
+        <span class="method-state {{ 'connected' if user.google_sub else '' }}">{{ ('Connected' if en else 'Подключён') if user.google_sub else ('Off' if en else 'Выкл.') }}</span>
+      </div>
+      <div class="login-method">
+        <span class="method-icon">••</span>
+        <div><strong>{{ 'Password' if en else 'Пароль' }}</strong><small>{{ 'Login with username and password' if en else 'Вход по логину и паролю' }}</small></div>
+        <span class="method-state {{ 'connected' if user.password_enabled else '' }}">{{ ('Set' if en else 'Настроен') if user.password_enabled else ('Not set' if en else 'Не задан') }}</span>
+      </div>
+      {% if not user.google_sub %}
+      <form method="post" action="/account/google/link" class="method-action-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>{{ 'Confirm current password' if en else 'Подтвердите текущий пароль' }}<input type="password" name="current_password" autocomplete="current-password" required></label>
+        <button class="secondary" type="submit">{{ 'Connect Google' if en else 'Подключить Google' }}</button>
+      </form>
+      {% elif user.password_enabled %}
+      <form method="post" action="/account/google/disconnect" class="method-action-form" onsubmit="return confirm({{ ('Disconnect Google? Password login will remain available.' if en else 'Отключить Google? Вход по паролю останется доступен.')|tojson }})">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>{{ 'Password to confirm' if en else 'Пароль для подтверждения' }}<input type="password" name="current_password" autocomplete="current-password" required></label>
+        <button class="secondary" type="submit">{{ 'Disconnect Google' if en else 'Отключить Google' }}</button>
+      </form>
+      {% endif %}
+    </section>
     <section class="account-panel"><h2>{{ 'Password' if en else 'Пароль' }}</h2>
+      {% if user.password_enabled %}
       <form method="post" action="/account/password" class="auth-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label>{{ 'Current password' if en else 'Текущий пароль' }}<input type="password" name="current_password" autocomplete="current-password" required></label>
@@ -30,6 +56,13 @@
         <label>{{ 'Repeat new password' if en else 'Повторите новый пароль' }}<input type="password" name="new_password_confirm" minlength="8" maxlength="128" autocomplete="new-password" required></label>
         <button type="submit">{{ 'Change password' if en else 'Изменить пароль' }}</button>
       </form>
+      {% else %}
+      <p class="muted">{{ 'Confirm your Google account first, then choose a username and password.' if en else 'Сначала подтвердите Google-аккаунт, затем задайте логин и пароль.' }}</p>
+      <form method="post" action="/account/password/authorize" class="method-connect-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">{{ 'Confirm with Google' if en else 'Подтвердить через Google' }}</button>
+      </form>
+      {% endif %}
     </section>
   </div>
   <section class="account-danger">

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -22,6 +22,7 @@ class User(Base):
     profile_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    password_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     language: Mapped[str] = mapped_column(String(5), default="ru")
     theme: Mapped[str] = mapped_column(String(10), default="dark")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

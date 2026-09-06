@@ -26,9 +26,11 @@ from app.auth import (
     normalize_username,
     new_auth_ticket,
     new_oauth_state,
+    new_password_setup_ticket,
+    oauth_state_context,
+    password_setup_user_id,
     set_csrf_cookie,
     valid_csrf_token,
-    valid_oauth_state,
     validate_password,
     validate_username,
     verify_password,
@@ -105,6 +107,9 @@ def account_page(request: Request, db: Session = Depends(get_db)) -> HTMLRespons
     notices = {
         "profile": "Данные профиля сохранены.",
         "password": "Пароль изменён.",
+        "password_created": "Вход по логину и паролю подключён.",
+        "google_linked": "Google успешно подключён.",
+        "google_unlinked": "Google отключён. Вход по паролю сохранён.",
     }
     return account_response(request, user, notice=notices.get(request.query_params.get("saved", ""), ""))
 
@@ -164,7 +169,7 @@ async def update_account_profile(
 @app.post("/account/password", response_class=HTMLResponse)
 def update_account_password(
     request: Request,
-    current_password: str = Form(...),
+    current_password: str = Form(""),
     new_password: str = Form(...),
     new_password_confirm: str = Form(...),
     csrf_token: str = Form(...),
@@ -173,6 +178,8 @@ def update_account_password(
     user = current_user(db, request)
     if user is None:
         return RedirectResponse("/login", status_code=303)
+    if not user.password_enabled:
+        return account_response(request, user, error="Сначала подтвердите личность через Google.", status_code=400)
     error = None if valid_csrf_token(request, csrf_token) else "Форма устарела. Отправьте её ещё раз."
     if not error and not verify_password(current_password, user.password_hash):
         error = "Текущий пароль указан неверно."
@@ -182,8 +189,118 @@ def update_account_password(
     if error:
         return account_response(request, user, error=error, status_code=400)
     user.password_hash = hash_password(new_password)
+    user.password_enabled = True
     db.commit()
     return RedirectResponse("/account?saved=password", status_code=303)
+
+
+@app.post("/account/google/link")
+def link_google_account(
+    request: Request,
+    current_password: str = Form(...),
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    if user.google_sub:
+        return account_response(request, user, error="Google уже подключён.", status_code=400)
+    if not valid_csrf_token(request, csrf_token) or not user.password_enabled or not verify_password(current_password, user.password_hash):
+        return account_response(request, user, error="Введите правильный текущий пароль.", status_code=400)
+    return begin_google_oauth(request, "link", user.id)
+
+
+@app.post("/account/password/authorize")
+def authorize_first_password(
+    request: Request,
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    if not valid_csrf_token(request, csrf_token) or user.password_enabled or not user.google_sub:
+        return account_response(request, user, error="Не удалось начать подтверждение.", status_code=400)
+    return begin_google_oauth(request, "set_password", user.id)
+
+
+def password_setup_response(request: Request, user: User, ticket: str, *, error: str = "", status_code: int = 200) -> HTMLResponse:
+    csrf_token = csrf_token_for_request(request)
+    response = templates.TemplateResponse(
+        request=request,
+        name="password_setup.html",
+        context={"user": user, "csrf_token": csrf_token, "ticket": ticket, "error": error},
+        status_code=status_code,
+    )
+    set_csrf_cookie(response, csrf_token)
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
+
+
+@app.get("/account/password/setup", response_class=HTMLResponse)
+def first_password_page(request: Request, ticket: str, db: Session = Depends(get_db)) -> HTMLResponse:
+    user = current_user(db, request)
+    ticket_user_id = password_setup_user_id(ticket)
+    cookie_ticket = request.cookies.get("nomad_password_setup", "")
+    if user is None or user.password_enabled or ticket_user_id != user.id or not secrets.compare_digest(ticket, cookie_ticket):
+        return RedirectResponse("/account", status_code=303)
+    return password_setup_response(request, user, ticket)
+
+
+@app.post("/account/password/setup", response_class=HTMLResponse)
+def create_first_password(
+    request: Request,
+    username: str = Form(...),
+    new_password: str = Form(...),
+    new_password_confirm: str = Form(...),
+    ticket: str = Form(...),
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user = current_user(db, request)
+    ticket_user_id = password_setup_user_id(ticket)
+    cookie_ticket = request.cookies.get("nomad_password_setup", "")
+    if user is None or user.password_enabled or ticket_user_id != user.id or not secrets.compare_digest(ticket, cookie_ticket):
+        return RedirectResponse("/account", status_code=303)
+    normalized = normalize_username(username)
+    error = None if valid_csrf_token(request, csrf_token) else "Форма устарела. Отправьте её ещё раз."
+    error = error or validate_username(normalized) or validate_password(new_password)
+    if not error and new_password != new_password_confirm:
+        error = "Пароли не совпадают."
+    owner = db.scalar(select(User).where(User.username == normalized, User.id != user.id))
+    if not error and owner:
+        error = "Этот логин уже занят."
+    if error:
+        return password_setup_response(request, user, ticket, error=error, status_code=400)
+    user.username = normalized
+    user.password_hash = hash_password(new_password)
+    user.password_enabled = True
+    db.commit()
+    response = RedirectResponse("/account?saved=password_created", status_code=303)
+    response.delete_cookie("nomad_password_setup", path="/")
+    return response
+
+
+@app.post("/account/google/disconnect")
+def disconnect_google_account(
+    request: Request,
+    current_password: str = Form(...),
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    if not user.google_sub:
+        return account_response(request, user, error="Google уже отключён.", status_code=400)
+    if not user.password_enabled:
+        return account_response(request, user, error="Сначала добавьте вход по паролю.", status_code=400)
+    if not valid_csrf_token(request, csrf_token) or not verify_password(current_password, user.password_hash):
+        return account_response(request, user, error="Введите правильный пароль для отключения Google.", status_code=400)
+    user.google_sub = None
+    db.commit()
+    return RedirectResponse("/account?saved=google_unlinked", status_code=303)
 
 
 @app.post("/account/photo/delete")
@@ -419,11 +536,10 @@ def google_callback_url(request: Request) -> str:
     return str(request.url_for("google_callback"))
 
 
-@app.get("/auth/google", include_in_schema=False)
-def google_login(request: Request) -> RedirectResponse:
+def begin_google_oauth(request: Request, mode: str, user_id: int = 0) -> RedirectResponse:
     if not settings.google_client_id or not settings.google_client_secret:
         return RedirectResponse("/login?google=unavailable", status_code=303)
-    state = new_oauth_state()
+    state = new_oauth_state(mode, user_id)
     query = urlencode({
         "client_id": settings.google_client_id,
         "redirect_uri": google_callback_url(request),
@@ -438,34 +554,88 @@ def google_login(request: Request) -> RedirectResponse:
     return response
 
 
+@app.get("/auth/google", include_in_schema=False)
+def google_login(request: Request, mode: str = "login") -> RedirectResponse:
+    if mode not in {"login", "register"}:
+        mode = "login"
+    return begin_google_oauth(request, mode)
+
+
+async def fetch_google_profile(code: str, redirect_uri: str) -> dict:
+    async with httpx.AsyncClient(timeout=15) as client:
+        token_response = await client.post("https://oauth2.googleapis.com/token", data={
+            "client_id": settings.google_client_id,
+            "client_secret": settings.google_client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": redirect_uri,
+        })
+        token_response.raise_for_status()
+        access_token = token_response.json()["access_token"]
+        profile_response = await client.get(
+            "https://openidconnect.googleapis.com/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        profile_response.raise_for_status()
+        return profile_response.json()
+
+
 @app.get("/auth/google/callback", name="google_callback", include_in_schema=False)
 async def google_callback(request: Request, code: str = "", state: str = "", db: Session = Depends(get_db)) -> HTMLResponse:
     cookie_state = request.cookies.get("nomad_google_state", "")
-    if not code or not state or not secrets.compare_digest(state, cookie_state) or not valid_oauth_state(state):
+    context = oauth_state_context(state)
+    if not code or not state or not secrets.compare_digest(state, cookie_state) or context is None:
         return auth_form(request, "login.html", error="Не удалось подтвердить вход через Google.", status_code=400)
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            token_response = await client.post("https://oauth2.googleapis.com/token", data={
-                "client_id": settings.google_client_id,
-                "client_secret": settings.google_client_secret,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": google_callback_url(request),
-            })
-            token_response.raise_for_status()
-            access_token = token_response.json()["access_token"]
-            profile_response = await client.get(
-                "https://openidconnect.googleapis.com/v1/userinfo",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            profile_response.raise_for_status()
-            profile = profile_response.json()
+        profile = await fetch_google_profile(code, google_callback_url(request))
     except (httpx.HTTPError, KeyError, ValueError):
         return auth_form(request, "login.html", error="Google не подтвердил вход. Попробуйте ещё раз.", status_code=400)
     if not profile.get("sub") or not profile.get("email_verified"):
         return auth_form(request, "login.html", error="Google-аккаунт не подтверждён.", status_code=400)
-    user = db.scalar(select(User).where(User.google_sub == str(profile["sub"])))
+    mode, expected_user_id = context
+    google_sub = str(profile["sub"])
+    email = str(profile.get("email") or "").strip().casefold()[:320] or None
+
+    if mode in {"link", "set_password"}:
+        user = current_user(db, request)
+        if user is None or user.id != expected_user_id:
+            return RedirectResponse("/login", status_code=303)
+        other_google_owner = db.scalar(select(User).where(User.google_sub == google_sub, User.id != user.id))
+        other_email_owner = db.scalar(select(User).where(User.email == email, User.id != user.id)) if email else None
+        if other_google_owner or other_email_owner:
+            return account_response(request, user, error="Этот Google-аккаунт уже связан с другим профилем Nomad.", status_code=409)
+        if mode == "set_password":
+            if user.google_sub != google_sub:
+                return account_response(request, user, error="Подтвердите тот Google-аккаунт, с которым регистрировались.", status_code=403)
+            ticket = new_password_setup_ticket(user.id)
+            response = RedirectResponse(f"/account/password/setup?ticket={ticket}", status_code=303)
+            response.set_cookie("nomad_password_setup", ticket, max_age=600, httponly=True,
+                                secure=settings.app_env == "production", samesite="strict", path="/")
+            response.delete_cookie("nomad_google_state", path="/")
+            return response
+        if user.google_sub:
+            return account_response(request, user, error="Google уже подключён. Обновите страницу аккаунта.", status_code=409)
+        user.google_sub = google_sub
+        user.email = email
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            user = current_user(db, request)
+            return account_response(request, user, error="Этот Google-аккаунт уже успели связать с другим профилем.", status_code=409)
+        response = RedirectResponse("/account?saved=google_linked", status_code=303)
+        response.delete_cookie("nomad_google_state", path="/")
+        return response
+
+    user = db.scalar(select(User).where(User.google_sub == google_sub))
     if user is None:
+        email_owner = db.scalar(select(User).where(User.email == email)) if email else None
+        if email_owner:
+            return auth_form(
+                request, "login.html",
+                error="Аккаунт с этой почтой уже существует. Войдите в него и подключите Google в настройках.",
+                status_code=409,
+            )
         base = re.sub(r"[^\w-]", "_", str(profile.get("email", "google")).split("@", 1)[0], flags=re.UNICODE).strip("_-")
         base = (base or "google")[:48]
         username = base
@@ -478,12 +648,19 @@ async def google_callback(request: Request, code: str = "", state: str = "", db:
             password_hash=hash_password(secrets.token_urlsafe(32)),
             full_name=str(profile.get("name") or username)[:100],
             google_sub=str(profile["sub"]),
-            email=str(profile.get("email") or "")[:320] or None,
+            email=email,
             profile_photo_url=str(profile.get("picture") or "")[:500] or None,
+            password_enabled=False,
         )
         db.add(user)
-        db.commit()
-        db.refresh(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except IntegrityError:
+            db.rollback()
+            user = db.scalar(select(User).where(User.google_sub == google_sub))
+            if user is None:
+                return auth_form(request, "login.html", error="Не удалось создать аккаунт. Попробуйте ещё раз.", status_code=409)
     response = auth_success_response(db, user)
     response.delete_cookie("nomad_google_state", path="/")
     return response
@@ -508,7 +685,7 @@ def login(
     if not valid_csrf_token(request, csrf_token):
         return auth_form(request, "login.html", error="Форма устарела. Пожалуйста, отправьте её ещё раз.", username=normalized, status_code=400)
     user = db.scalar(select(User).where(User.username == normalized))
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None or not user.password_enabled or not verify_password(password, user.password_hash):
         return auth_form(
             request,
             "login.html",

@@ -72,6 +72,19 @@ def create_database_schema() -> None:
         user_columns = {
             column["name"] for column in inspect(connection).get_columns("users")
         }
+        migration = "005_password_login_state"
+        if migration not in applied:
+            if "password_enabled" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN password_enabled BOOLEAN DEFAULT TRUE"))
+            connection.execute(text("UPDATE users SET password_enabled = FALSE WHERE google_sub IS NOT NULL"))
+            connection.execute(text("UPDATE users SET password_enabled = TRUE WHERE password_enabled IS NULL"))
+            connection.execute(
+                text("INSERT INTO schema_migrations (version) VALUES (:version)"),
+                {"version": migration},
+            )
+        user_columns = {
+            column["name"] for column in inspect(connection).get_columns("users")
+        }
         migration = "003_user_preferences"
         if migration not in applied:
             if "language" not in user_columns:
