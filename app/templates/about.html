@@ -90,6 +90,22 @@
   });
 
   const revealItems = document.querySelectorAll('.reveal');
+  let previousScrollY = window.scrollY;
+  let scrollDirection = 'down';
+  let directionFrame;
+  document.body.dataset.scrollDirection = scrollDirection;
+  window.addEventListener('scroll', () => {
+    if (directionFrame) return;
+    directionFrame = window.requestAnimationFrame(() => {
+      const nextDirection = window.scrollY < previousScrollY ? 'up' : 'down';
+      if (Math.abs(window.scrollY - previousScrollY) > 3) {
+        scrollDirection = nextDirection;
+        document.body.dataset.scrollDirection = scrollDirection;
+      }
+      previousScrollY = window.scrollY;
+      directionFrame = undefined;
+    });
+  }, {passive: true});
   const scrollLink = document.querySelector('.hero-scroll');
   scrollLink?.addEventListener('click', (event) => {
     const target = document.querySelector(scrollLink.getAttribute('href'));
@@ -100,11 +116,9 @@
   if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const revealObserver = new IntersectionObserver((entries, observer) => {
       entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
+        entry.target.classList.toggle('is-visible', entry.isIntersecting);
       });
-    }, {threshold: .16});
+    }, {threshold: .12, rootMargin: '0px 0px -5%'});
     revealItems.forEach((item) => revealObserver.observe(item));
   } else {
     revealItems.forEach((item) => item.classList.add('is-visible'));
