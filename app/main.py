@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-import traceback
 
 from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -37,12 +36,7 @@ templates = Jinja2Templates(directory=APP_DIR / "templates")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    try:
-        create_database_schema()
-    except Exception:
-        (settings.data_dir / "startup-error.txt").write_text(
-            traceback.format_exc(), encoding="utf-8"
-        )
+    create_database_schema()
     yield
 
 
