@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import secrets
+import time
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Request, Response
@@ -14,6 +15,8 @@ from app.config import settings
 from app.models import AuthSession, User
 
 PBKDF2_ITERATIONS = 600_000
+CSRF_MAX_AGE_SECONDS = 2 * 60 * 60
+_CSRF_SIGNING_KEY = secrets.token_bytes(32)
 
 
 def normalize_username(username: str) -> str:
@@ -127,12 +130,15 @@ def current_user(db: Session, request: Request) -> User | None:
 
 
 def new_csrf_token() -> str:
-    return secrets.token_urlsafe(24)
+    payload = f"{int(time.time())}.{secrets.token_urlsafe(24)}"
+    signature = hmac.new(_CSRF_SIGNING_KEY, payload.encode("ascii"), hashlib.sha256).hexdigest()
+    return f"{payload}.{signature}"
 
 
 def csrf_token_for_request(request: Request) -> str:
     """Reuse the browser token so another open form does not become stale."""
-    return request.cookies.get(settings.csrf_cookie_name) or new_csrf_token()
+    cookie_token = request.cookies.get(settings.csrf_cookie_name, "")
+    return cookie_token if _valid_signed_csrf_token(cookie_token) else new_csrf_token()
 
 
 def set_csrf_cookie(response: Response, token: str) -> None:
@@ -147,6 +153,25 @@ def set_csrf_cookie(response: Response, token: str) -> None:
     )
 
 
+def _valid_signed_csrf_token(token: str) -> bool:
+    try:
+        timestamp_text, nonce, supplied_signature = token.split(".", 2)
+        timestamp = int(timestamp_text)
+        payload = f"{timestamp_text}.{nonce}"
+        expected_signature = hmac.new(
+            _CSRF_SIGNING_KEY, payload.encode("ascii"), hashlib.sha256
+        ).hexdigest()
+    except (AttributeError, TypeError, ValueError):
+        return False
+    age = int(time.time()) - timestamp
+    return (
+        0 <= age <= CSRF_MAX_AGE_SECONDS
+        and bool(nonce)
+        and hmac.compare_digest(supplied_signature, expected_signature)
+    )
+
+
 def valid_csrf_token(request: Request, form_token: str) -> bool:
-    cookie_token = request.cookies.get(settings.csrf_cookie_name, "")
-    return bool(cookie_token and form_token and hmac.compare_digest(cookie_token, form_token))
+    # The signed form token is self-contained. This remains secure even when a
+    # mobile browser drops the auxiliary cookie between GET and POST.
+    return _valid_signed_csrf_token(form_token)

@@ -39,6 +39,19 @@ def test_opening_another_auth_form_does_not_expire_the_first() -> None:
         assert "Форма устарела" not in response.text
 
 
+def test_login_form_works_when_mobile_browser_drops_csrf_cookie() -> None:
+    with TestClient(app) as client:
+        page = client.get("/login")
+        token = csrf_from(page)
+        client.cookies.clear()
+        response = client.post(
+            "/login",
+            data={"username": "missing", "password": "wrong-password", "csrf_token": token},
+        )
+        assert response.status_code == 401
+        assert "Форма устарела" not in response.text
+
+
 def test_register_logout_and_login(test_session_factory) -> None:
     with TestClient(app) as client:
         page = client.get("/register")
