@@ -195,3 +195,21 @@ def valid_csrf_token(request: Request, form_token: str) -> bool:
     # The signed form token is self-contained. This remains secure even when a
     # mobile browser drops the auxiliary cookie between GET and POST.
     return _valid_signed_csrf_token(form_token)
+
+
+def new_auth_ticket(user_id: int) -> str:
+    payload = f"{int(time.time())}.{user_id}.{secrets.token_urlsafe(12)}"
+    signature = hmac.new(_CSRF_SIGNING_KEY, payload.encode("ascii"), hashlib.sha256).hexdigest()
+    return f"{payload}.{signature}"
+
+
+def auth_ticket_user_id(ticket: str) -> int | None:
+    try:
+        timestamp, user_id, nonce, signature = ticket.split(".", 3)
+        payload = f"{timestamp}.{user_id}.{nonce}"
+        expected = hmac.new(_CSRF_SIGNING_KEY, payload.encode("ascii"), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected) or not 0 <= int(time.time()) - int(timestamp) <= 60:
+            return None
+        return int(user_id)
+    except (AttributeError, TypeError, ValueError):
+        return None

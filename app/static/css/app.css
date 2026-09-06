@@ -195,6 +195,7 @@ button.danger { border-color: #813426; background: #994431; }
 .auth-card h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
 .auth-back { display:inline-block; margin-bottom:28px; color:var(--muted); font-size:.72rem; letter-spacing:.1em; text-decoration:none; text-transform:uppercase; }
 .auth-form { display: grid; gap: 18px; margin-top: 28px; }
+.registration-photo{display:grid;justify-items:start;gap:8px}.registration-photo .button-link{min-width:170px;border-radius:999px;cursor:pointer}
 .switch-link { margin: 25px 0 0; color: var(--muted); text-align: center; }
 .alert { margin-top: 20px; padding: 11px 13px; border-left: 3px solid var(--rust); background: #34221d; color: #f0b4a2; line-height: 1.45; }
 

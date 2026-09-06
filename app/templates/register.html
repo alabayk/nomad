@@ -13,9 +13,10 @@
     <label>Имя<input name="full_name" value="{{ full_name }}" maxlength="100" autocomplete="name" placeholder="Как к вам обращаться" required></label>
     <label>Пароль<input type="password" name="password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
     <label>Повторите пароль<input type="password" name="password_confirm" minlength="8" maxlength="128" autocomplete="new-password" required></label>
-    <label>Фото профиля <small>Необязательно · JPG, PNG, GIF или WebP до 5 МБ</small><input type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"></label>
+    <div class="registration-photo"><input class="visually-hidden" id="registration-photo-input" type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"><label class="button-link secondary-link" for="registration-photo-input">Добавить фото</label><small id="registration-photo-name">Необязательно · JPG, PNG, GIF или WebP до 5 МБ</small></div>
     <button type="submit">Зарегистрироваться</button>
   </form>
   <p class="switch-link">Уже есть аккаунт? <a href="/login">Войти</a></p>
 </section>
 {% endblock %}
+{% block scripts %}<script>const registrationPhoto=document.getElementById('registration-photo-input');registrationPhoto.addEventListener('change',()=>{if(registrationPhoto.files[0])document.getElementById('registration-photo-name').textContent=registrationPhoto.files[0].name});</script>{% endblock %}

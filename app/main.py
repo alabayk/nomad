@@ -13,11 +13,13 @@ from sqlalchemy.orm import Session
 
 from app.auth import (
     create_session,
+    auth_ticket_user_id,
     csrf_token_for_request,
     current_user,
     delete_session,
     hash_password,
     normalize_username,
+    new_auth_ticket,
     set_csrf_cookie,
     valid_csrf_token,
     validate_password,
@@ -302,10 +304,22 @@ def auth_form(
     return response
 
 
-def auth_success_response(db: Session, user: User) -> HTMLResponse:
-    response = HTMLResponse("""<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=/dashboard"><title>Nomad</title></head><body><a href="/dashboard">Продолжить</a><script>location.replace('/dashboard')</script></body></html>""")
+def auth_success_response(db: Session, user: User) -> RedirectResponse:
+    response = RedirectResponse(f"/auth/complete?ticket={new_auth_ticket(user.id)}", status_code=303)
     response.headers["Cache-Control"] = "no-store, max-age=0"
-    response.headers["Location"] = "/dashboard"
+    create_session(db, user, response)
+    return response
+
+
+@app.get("/auth/complete", include_in_schema=False)
+def complete_auth(request: Request, ticket: str, db: Session = Depends(get_db)) -> RedirectResponse:
+    response = RedirectResponse("/dashboard", status_code=303)
+    if current_user(db, request):
+        return response
+    user_id = auth_ticket_user_id(ticket)
+    user = db.get(User, user_id) if user_id else None
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
     create_session(db, user, response)
     return response
 

@@ -32,7 +32,7 @@ def register(client: TestClient, username: str) -> None:
         },
         follow_redirects=False,
     )
-    assert response.status_code == 200
+    assert response.status_code == 303
 
 
 def test_memory_crud_and_account_isolation(monkeypatch, test_session_factory) -> None:

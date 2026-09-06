@@ -66,8 +66,8 @@ def test_register_logout_and_login(test_session_factory) -> None:
             },
             follow_redirects=False,
         )
-        assert response.status_code == 200
-        assert response.headers["location"] == "/dashboard"
+        assert response.status_code == 303
+        assert response.headers["location"].startswith("/auth/complete?ticket=")
         assert client.get("/dashboard").status_code == 200
 
         dashboard = client.get("/dashboard")
@@ -89,7 +89,7 @@ def test_register_logout_and_login(test_session_factory) -> None:
             },
             follow_redirects=False,
         )
-        assert login.status_code == 200
+        assert login.status_code == 303
 
     with test_session_factory() as db:
         user = db.scalar(select(User).where(User.username == "traveller"))
@@ -145,7 +145,7 @@ def test_registration_accepts_optional_profile_photo(test_session_factory) -> No
             files={"profile_photo": ("avatar.png", b"\x89PNG\r\n\x1a\nprofile", "image/png")},
             follow_redirects=False,
         )
-        assert response.status_code == 200
+        assert response.status_code == 303
 
     with test_session_factory() as db:
         user = db.scalar(select(User).where(User.username == "photo_user"))
