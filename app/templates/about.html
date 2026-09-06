@@ -6,7 +6,7 @@
   <section class="about-hero">
     <div class="about-intro">
       <p class="eyebrow">{{ 'Personal travel archive' if en else 'Личный путевой архив' }}</p>
-      <h1>{{ 'Preserve your memories on the map' if en else 'Увековечьте воспоминания на карте' }}</h1>
+      <h1>{{ 'Keep your memories on the map' if en else 'Сохраните воспоминания на карте' }}</h1>
       <p class="about-lead">{{ 'With Nomad, your journeys are no longer just a list of cities and countries, but a living map of memories — with photos, short stories and plans for the future.' if en else 'Благодаря Nomad теперь ваши путешествия — не просто список городов и стран, а целая живая карта воспоминаний — с фотографиями, короткими историями и планами на будущее.' }}</p>
       <div class="about-actions">
         {% if user %}
@@ -77,7 +77,7 @@
     const data = await response.json();
     countriesDemo.addSource('demo-countries', {type: 'geojson', data});
     countriesDemo.addLayer({id: 'demo-country-base', type: 'fill', source: 'demo-countries', paint: {'fill-color': '#f7f4ec', 'fill-outline-color': '#a7b5ad'}});
-    countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV']]], paint: {'fill-color': '#d77849', 'fill-opacity': .86, 'fill-outline-color': '#8b432a'}});
+    countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV','RU','CN','DE','EG']]], paint: {'fill-color': '#d77849', 'fill-opacity': .86, 'fill-outline-color': '#8b432a'}});
     countriesDemo.fitBounds([[-25, -15], [150, 72]], {padding: 10, duration: 0});
   });
 </script>

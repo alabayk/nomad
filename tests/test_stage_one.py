@@ -24,7 +24,7 @@ def test_about_is_public_default_page() -> None:
     assert index.status_code == 303
     assert index.headers["location"] == "/about"
     assert about.status_code == 200
-    assert "Увековечьте воспоминания на карте" in about.text
+    assert "Сохраните воспоминания на карте" in about.text
     assert 'href="/register"' in about.text
 
 
