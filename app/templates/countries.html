@@ -21,6 +21,7 @@
 
   <section class="countries-layout">
     <div class="map-panel country-map-panel {{ page_mode }}">
+      <div class="map-frame-label"><span>{{ '03' if page_mode == 'wishlist' else '02' }}</span>{{ 'Future geography' if page_mode == 'wishlist' and en else ('География планов' if page_mode == 'wishlist' else ('Travel geography' if en else 'География поездок')) }}</div>
       <div id="countries-map" aria-label="{{ 'Country map' if en else 'Карта посещённых стран' }}"></div>
     </div>
     <aside class="country-sidebar">
