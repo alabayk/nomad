@@ -67,6 +67,9 @@ async def save_uploads(user_id: int, uploads: list[UploadFile]) -> list[str]:
             filename = f"{uuid4().hex}{suffix}"
             (user_dir / filename).write_bytes(data)
             saved_urls.append(f"/uploads/{user_id}/{filename}")
+    except OSError as exc:
+        delete_local_photos(user_id, saved_urls)
+        raise PhotoError("Не удалось сохранить фотографию на сервере.") from exc
     except PhotoError:
         delete_local_photos(user_id, saved_urls)
         raise
