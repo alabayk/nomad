@@ -4,6 +4,16 @@
 {% block content %}
 <div class="about-page">
   <section class="about-hero">
+    <div class="demo-map" aria-label="Пример карты воспоминаний">
+      <div id="about-places-map"></div>
+      <small>{{ 'Personal map example' if en else 'Пример личной карты' }}</small>
+    </div>
+    <svg class="hero-routes" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-80 720C210 490 310 790 590 565S970 190 1530 390"/>
+      <path d="M-120 785C240 540 360 850 650 605S1030 250 1540 455"/>
+      <path d="M-60 650C190 450 345 700 555 520S910 120 1510 325"/>
+      <circle cx="590" cy="565" r="7"/><circle cx="970" cy="280" r="7"/>
+    </svg>
     <div class="about-intro">
       <p class="eyebrow">{{ 'Personal travel archive' if en else 'Личный путевой архив' }}</p>
       <h1>{{ 'Keep your memories on the map' if en else 'Сохраните воспоминания на карте' }}</h1>
@@ -17,24 +27,22 @@
         {% endif %}
       </div>
     </div>
-    <div class="demo-map" aria-label="Пример карты воспоминаний">
-      <div id="about-places-map"></div>
-      <small>{{ 'Personal map example' if en else 'Пример личной карты' }}</small>
-    </div>
+    <div class="hero-index" aria-hidden="true"><span>48.8566° N</span><span>002.3522° E</span></div>
+    <a class="hero-scroll" href="#about-features" aria-label="{{ 'Scroll to learn more' if en else 'Прокрутить дальше' }}"><span></span>{{ 'Explore' if en else 'Смотреть дальше' }}</a>
   </section>
 
-  <section class="about-features">
-    <article><span>01</span><h2>{{ 'Mark places' if en else 'Отмечайте места' }}</h2><p>{{ 'Enter a location and Nomad will find its coordinates. If we get it wrong, you can place the point manually.' if en else 'Введите название локации — Nomad найдёт её координаты. Если мы вдруг ошиблись, точку можно поставить вручную.' }}</p></article>
-    <article><span>02</span><h2>{{ 'Keep moments' if en else 'Храните моменты' }}</h2><p>{{ 'Every memory becomes its own Polaroid card.' if en else 'Каждое воспоминание становится отдельной полароидной карточкой.' }}</p></article>
-    <article><span>03</span><h2>{{ 'Plan ahead' if en else 'Планируйте дальше' }}</h2><p>{{ 'Build your own collection of visited countries and choose the destinations you are planning to explore.' if en else 'Соберите собственную коллекцию посещённых стран и выберите те направления, куда только собираетесь.' }}</p></article>
+  <section class="about-features reveal-group" id="about-features">
+    <article class="reveal"><span>01</span><h2>{{ 'Mark places' if en else 'Отмечайте места' }}</h2><p>{{ 'Enter a location and Nomad will find its coordinates. If we get it wrong, you can place the point manually.' if en else 'Введите название локации — Nomad найдёт её координаты. Если мы вдруг ошиблись, точку можно поставить вручную.' }}</p></article>
+    <article class="reveal"><span>02</span><h2>{{ 'Keep moments' if en else 'Храните моменты' }}</h2><p>{{ 'Every memory becomes its own Polaroid card.' if en else 'Каждое воспоминание становится отдельной полароидной карточкой.' }}</p></article>
+    <article class="reveal"><span>03</span><h2>{{ 'Plan ahead' if en else 'Планируйте дальше' }}</h2><p>{{ 'Build your own collection of visited countries and choose the destinations you are planning to explore.' if en else 'Соберите собственную коллекцию посещённых стран и выберите те направления, куда только собираетесь.' }}</p></article>
   </section>
 
-  <section class="about-showcase">
-    <div class="demo-countries" aria-label="Пример карты посещённых стран">
+  <section class="about-showcase reveal-group">
+    <div class="demo-countries reveal" aria-label="Пример карты посещённых стран">
       <div id="about-countries-map"></div>
       <div class="demo-legend"><i></i> {{ 'visited countries' if en else 'посещённые страны' }}</div>
     </div>
-    <div class="showcase-copy">
+    <div class="showcase-copy reveal">
       <p class="eyebrow">{{ 'Two views of your journeys' if en else 'Два взгляда на путешествия' }}</p>
       <h2>{{ 'Memory map and country collection' if en else 'Карта воспоминаний и коллекция стран' }}</h2>
       <p>{{ 'The first map shows specific cities and places, while the second helps you see the geography of your journeys at a glance.' if en else 'Первая карта покажет конкретные города и места, а вторая поможет одним взглядом увидеть географию ваших поездок.' }}</p>
@@ -80,5 +88,19 @@
     countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV','RU','CN','DE','EG']]], paint: {'fill-color': '#d77849', 'fill-opacity': .86, 'fill-outline-color': '#8b432a'}});
     countriesDemo.fitBounds([[-25, -15], [150, 72]], {padding: 10, duration: 0});
   });
+
+  const revealItems = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, {threshold: .16});
+    revealItems.forEach((item) => revealObserver.observe(item));
+  } else {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+  }
 </script>
 {% endblock %}
