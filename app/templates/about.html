@@ -49,6 +49,26 @@
       {% if not user %}<a href="/register">Создать свою карту →</a>{% endif %}
     </div>
   </section>
+
+  <section class="about-process reveal-group">
+    <header class="process-heading reveal">
+      <p class="eyebrow">{{ 'From a moment to a map' if en else 'От момента до точки на карте' }}</p>
+      <h2>{{ 'Your journey, carefully collected' if en else 'Ваше путешествие, бережно собранное' }}</h2>
+    </header>
+    <div class="process-steps">
+      <article class="reveal"><span>01</span><h3>{{ 'Remember' if en else 'Вспомните' }}</h3><p>{{ 'Add a place, month and the details you want to keep.' if en else 'Добавьте место, месяц и детали, которые хочется сохранить.' }}</p></article>
+      <article class="reveal"><span>02</span><h3>{{ 'Pin it' if en else 'Отметьте' }}</h3><p>{{ 'Nomad finds the location, or lets you choose the exact point.' if en else 'Nomad найдёт локацию или позволит выбрать точную точку вручную.' }}</p></article>
+      <article class="reveal"><span>03</span><h3>{{ 'Return' if en else 'Возвращайтесь' }}</h3><p>{{ 'Open the map whenever you want to revisit the story.' if en else 'Открывайте карту, когда захочется снова вернуться к этой истории.' }}</p></article>
+    </div>
+  </section>
+
+  <section class="about-closing reveal">
+    <div class="closing-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="eyebrow">{{ 'Your world is waiting' if en else 'Ваш мир ждёт' }}</p>
+    <h2>{{ 'Give every journey its place' if en else 'Найдите место каждому путешествию' }}</h2>
+    <p>{{ 'Start with one memory. The map will grow with you.' if en else 'Начните с одного воспоминания. Карта будет расти вместе с вами.' }}</p>
+    <a class="button-link" href="{{ '/dashboard' if user else '/register' }}">{{ 'Open my map' if user and en else ('Открыть мою карту' if user else ('Create my map' if en else 'Создать свою карту')) }}</a>
+  </section>
 </div>
 {% endblock %}
 {% block scripts %}
