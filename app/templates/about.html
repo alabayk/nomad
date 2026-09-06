@@ -120,16 +120,27 @@
   let previousScrollY = window.scrollY;
   let scrollDirection = 'down';
   let directionFrame;
+  let previousScrollTime = performance.now();
+  let fastScrollTimer;
   document.body.dataset.scrollDirection = scrollDirection;
   window.addEventListener('scroll', () => {
     if (directionFrame) return;
     directionFrame = window.requestAnimationFrame(() => {
+      const now = performance.now();
+      const distance = Math.abs(window.scrollY - previousScrollY);
+      const speed = distance / Math.max(now - previousScrollTime, 16) * 1000;
       const nextDirection = window.scrollY < previousScrollY ? 'up' : 'down';
-      if (Math.abs(window.scrollY - previousScrollY) > 3) {
+      if (distance > 3) {
         scrollDirection = nextDirection;
         document.body.dataset.scrollDirection = scrollDirection;
       }
+      if (speed > 1200) {
+        document.body.classList.add('fast-scroll');
+        clearTimeout(fastScrollTimer);
+        fastScrollTimer = setTimeout(() => document.body.classList.remove('fast-scroll'), 220);
+      }
       previousScrollY = window.scrollY;
+      previousScrollTime = now;
       directionFrame = undefined;
     });
   }, {passive: true});
