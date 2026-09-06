@@ -20,6 +20,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(100), default="")
     profile_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     language: Mapped[str] = mapped_column(String(5), default="ru")
     theme: Mapped[str] = mapped_column(String(10), default="dark")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

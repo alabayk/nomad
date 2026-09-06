@@ -16,6 +16,7 @@
     <div class="registration-photo"><input class="visually-hidden" id="registration-photo-input" type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"><label class="button-link secondary-link" for="registration-photo-input">Добавить фото</label><small id="registration-photo-name">Необязательно · JPG, PNG, GIF или WebP до 5 МБ</small></div>
     <button type="submit">Зарегистрироваться</button>
   </form>
+  {% if google_login_enabled %}<div class="auth-divider"><span>или</span></div><a class="google-login" href="/auth/google"><span class="google-g">G</span>Продолжить с Google</a>{% endif %}
   <p class="switch-link">Уже есть аккаунт? <a href="/login">Войти</a></p>
 </section>
 {% endblock %}

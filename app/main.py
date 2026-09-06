@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+import re
+import secrets
+from urllib.parse import urlencode
+
+import httpx
 
 from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -20,8 +25,10 @@ from app.auth import (
     hash_password,
     normalize_username,
     new_auth_ticket,
+    new_oauth_state,
     set_csrf_cookie,
     valid_csrf_token,
+    valid_oauth_state,
     validate_password,
     validate_username,
     verify_password,
@@ -296,7 +303,8 @@ def auth_form(
     response = templates.TemplateResponse(
         request=request,
         name=template_name,
-        context={"error": error, "username": username, "full_name": full_name, "csrf_token": csrf_token},
+        context={"error": error, "username": username, "full_name": full_name, "csrf_token": csrf_token,
+                 "google_login_enabled": bool(settings.google_client_id and settings.google_client_secret)},
         status_code=status_code,
     )
     set_csrf_cookie(response, csrf_token)
@@ -403,6 +411,82 @@ async def register(
         )
 
     return auth_success_response(db, user)
+
+
+def google_callback_url(request: Request) -> str:
+    if settings.google_redirect_uri:
+        return settings.google_redirect_uri
+    return str(request.url_for("google_callback"))
+
+
+@app.get("/auth/google", include_in_schema=False)
+def google_login(request: Request) -> RedirectResponse:
+    if not settings.google_client_id or not settings.google_client_secret:
+        return RedirectResponse("/login?google=unavailable", status_code=303)
+    state = new_oauth_state()
+    query = urlencode({
+        "client_id": settings.google_client_id,
+        "redirect_uri": google_callback_url(request),
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "prompt": "select_account",
+    })
+    response = RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{query}", status_code=303)
+    response.set_cookie("nomad_google_state", state, max_age=600, httponly=True,
+                        secure=settings.app_env == "production", samesite="lax", path="/")
+    return response
+
+
+@app.get("/auth/google/callback", name="google_callback", include_in_schema=False)
+async def google_callback(request: Request, code: str = "", state: str = "", db: Session = Depends(get_db)) -> HTMLResponse:
+    cookie_state = request.cookies.get("nomad_google_state", "")
+    if not code or not state or not secrets.compare_digest(state, cookie_state) or not valid_oauth_state(state):
+        return auth_form(request, "login.html", error="Не удалось подтвердить вход через Google.", status_code=400)
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            token_response = await client.post("https://oauth2.googleapis.com/token", data={
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": google_callback_url(request),
+            })
+            token_response.raise_for_status()
+            access_token = token_response.json()["access_token"]
+            profile_response = await client.get(
+                "https://openidconnect.googleapis.com/v1/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            profile_response.raise_for_status()
+            profile = profile_response.json()
+    except (httpx.HTTPError, KeyError, ValueError):
+        return auth_form(request, "login.html", error="Google не подтвердил вход. Попробуйте ещё раз.", status_code=400)
+    if not profile.get("sub") or not profile.get("email_verified"):
+        return auth_form(request, "login.html", error="Google-аккаунт не подтверждён.", status_code=400)
+    user = db.scalar(select(User).where(User.google_sub == str(profile["sub"])))
+    if user is None:
+        base = re.sub(r"[^\w-]", "_", str(profile.get("email", "google")).split("@", 1)[0], flags=re.UNICODE).strip("_-")
+        base = (base or "google")[:48]
+        username = base
+        suffix = 1
+        while db.scalar(select(User.id).where(User.username == username)):
+            suffix += 1
+            username = f"{base}_{suffix}"
+        user = User(
+            username=username,
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            full_name=str(profile.get("name") or username)[:100],
+            google_sub=str(profile["sub"]),
+            email=str(profile.get("email") or "")[:320] or None,
+            profile_photo_url=str(profile.get("picture") or "")[:500] or None,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    response = auth_success_response(db, user)
+    response.delete_cookie("nomad_google_state", path="/")
+    return response
 
 
 @app.get("/login", response_class=HTMLResponse)

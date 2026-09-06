@@ -195,6 +195,7 @@ button.danger { border-color: #813426; background: #994431; }
 .auth-card h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
 .auth-back { display:inline-block; margin-bottom:28px; color:var(--muted); font-size:.72rem; letter-spacing:.1em; text-decoration:none; text-transform:uppercase; }
 .auth-form { display: grid; gap: 18px; margin-top: 28px; }
+.auth-divider{display:flex;align-items:center;gap:14px;margin:22px 0 14px;color:var(--muted);font-size:.8rem}.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}.google-login{display:flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:0 20px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;transition:border-color .2s,background .2s,transform .2s}.google-login:hover{border-color:var(--ink);background:rgba(255,255,255,.04);transform:translateY(-1px)}.google-g{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#fff;color:#4285f4;font:700 16px Arial,sans-serif}
 .registration-photo{display:grid;justify-items:start;gap:8px}.registration-photo .button-link{min-width:170px;border-radius:999px;cursor:pointer}
 .switch-link { margin: 25px 0 0; color: var(--muted); text-align: center; }
 .alert { margin-top: 20px; padding: 11px 13px; border-left: 3px solid var(--rust); background: #34221d; color: #f0b4a2; line-height: 1.45; }

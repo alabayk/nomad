@@ -58,6 +58,20 @@ def create_database_schema() -> None:
         user_columns = {
             column["name"] for column in inspect(connection).get_columns("users")
         }
+        migration = "004_google_login"
+        if migration not in applied:
+            if "google_sub" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN google_sub VARCHAR(255)"))
+            if "email" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(320)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
+            connection.execute(
+                text("INSERT INTO schema_migrations (version) VALUES (:version)"),
+                {"version": migration},
+            )
+        user_columns = {
+            column["name"] for column in inspect(connection).get_columns("users")
+        }
         migration = "003_user_preferences"
         if migration not in applied:
             if "language" not in user_columns:

@@ -40,6 +40,9 @@ class Settings:
     nominatim_user_agent: str
     max_photo_bytes: int
     max_photos_per_memory: int
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str
 
 
 def load_settings() -> Settings:
@@ -71,6 +74,9 @@ def load_settings() -> Settings:
         ),
         max_photo_bytes=5 * 1024 * 1024,
         max_photos_per_memory=10,
+        google_client_id=os.getenv("GOOGLE_CLIENT_ID", "").strip(),
+        google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET", "").strip(),
+        google_redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "").strip(),
     )
 
 

@@ -213,3 +213,13 @@ def auth_ticket_user_id(ticket: str) -> int | None:
         return int(user_id)
     except (AttributeError, TypeError, ValueError):
         return None
+
+
+def new_oauth_state() -> str:
+    payload = f"{int(time.time())}.{secrets.token_urlsafe(24)}"
+    signature = hmac.new(_CSRF_SIGNING_KEY, payload.encode("ascii"), hashlib.sha256).hexdigest()
+    return f"{payload}.{signature}"
+
+
+def valid_oauth_state(state: str) -> bool:
+    return _valid_signed_csrf_token(state)

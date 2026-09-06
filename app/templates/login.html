@@ -13,6 +13,7 @@
     <label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>
     <button type="submit">Войти</button>
   </form>
+  {% if google_login_enabled %}<div class="auth-divider"><span>или</span></div><a class="google-login" href="/auth/google"><span class="google-g">G</span>Продолжить с Google</a>{% endif %}
   <p class="switch-link">Нет аккаунта? <a href="/register">Создать</a></p>
 </section>
 {% endblock %}
