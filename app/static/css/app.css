@@ -191,6 +191,7 @@ button.danger { border-color: #813426; background: #994431; }
 .auth-card > *, .wide-card > *, .detail-card > * { position: relative; }
 .welcome-card { width: min(100%, 760px); display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; }
 .auth-card h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+.auth-back { display:inline-block; margin-bottom:28px; color:var(--muted); font-size:.72rem; letter-spacing:.1em; text-decoration:none; text-transform:uppercase; }
 .auth-form { display: grid; gap: 18px; margin-top: 28px; }
 .switch-link { margin: 25px 0 0; color: var(--muted); text-align: center; }
 .alert { margin-top: 20px; padding: 11px 13px; border-left: 3px solid var(--rust); background: #34221d; color: #f0b4a2; line-height: 1.45; }

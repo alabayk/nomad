@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import secrets
 import time
+import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Request, Response
@@ -16,7 +17,26 @@ from app.models import AuthSession, User
 
 PBKDF2_ITERATIONS = 600_000
 CSRF_MAX_AGE_SECONDS = 2 * 60 * 60
-_CSRF_SIGNING_KEY = secrets.token_bytes(32)
+
+def _load_csrf_signing_key() -> bytes:
+    configured = os.getenv("NOMAD_SECRET_KEY", "").strip()
+    if configured:
+        return hashlib.sha256(configured.encode("utf-8")).digest()
+    key_file = settings.data_dir / ".csrf_secret"
+    if key_file.exists():
+        return base64.urlsafe_b64decode(key_file.read_text(encoding="ascii"))
+    key = secrets.token_bytes(32)
+    encoded = base64.urlsafe_b64encode(key)
+    try:
+        descriptor = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return base64.urlsafe_b64decode(key_file.read_text(encoding="ascii"))
+    with os.fdopen(descriptor, "wb") as secret_file:
+        secret_file.write(encoded)
+    return key
+
+
+_CSRF_SIGNING_KEY = _load_csrf_signing_key()
 
 
 def normalize_username(username: str) -> str:

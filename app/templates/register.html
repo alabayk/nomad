@@ -2,11 +2,12 @@
 {% block title %}Регистрация — Nomad{% endblock %}
 {% block content %}
 <section class="auth-card">
+  <a class="auth-back" href="/about">← Назад</a>
   <p class="eyebrow">Новый маршрут начинается здесь</p>
   <h1>Создать аккаунт</h1>
   <p class="muted">Сохраняйте места и фотографии в личной коллекции.</p>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/register" enctype="multipart/form-data" class="auth-form">
+  <form method="post" action="/register" enctype="multipart/form-data" class="auth-form" accept-charset="UTF-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>Логин<input name="username" value="{{ username }}" minlength="3" maxlength="64" autocomplete="username" required autofocus></label>
     <label>Имя<input name="full_name" value="{{ full_name }}" maxlength="100" autocomplete="name" placeholder="Как к вам обращаться" required></label>

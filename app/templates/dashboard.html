@@ -17,10 +17,7 @@
     </div>
     <div class="header-actions">
       <a class="button-link" href="/memories/new">+ {{ 'Add place' if en else 'Добавить место' }}</a>
-      <form method="post" action="/logout">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="secondary" type="submit">{{ 'Sign out' if en else 'Выйти' }}</button>
-      </form>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     </div>
   </header>
 
