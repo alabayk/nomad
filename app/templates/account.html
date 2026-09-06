@@ -16,7 +16,6 @@
         <label>{{ 'Username' if en else 'Логин' }}<input name="username" value="{{ user.username }}" minlength="3" maxlength="64" required></label>
         <div class="profile-photo-control">
           <input class="visually-hidden" id="profile-photo-input" type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp">
-          <input id="remove-profile-photo" type="hidden" name="remove_photo" value="false">
           <button class="secondary photo-menu-open" type="button">{{ 'Change photo' if user.profile_photo_url and en else ('Изменить фото' if user.profile_photo_url else ('Add photo' if en else 'Добавить фото')) }}</button>
           <small id="profile-photo-status">{{ 'JPG, PNG, GIF or WebP up to 5 MB' if en else 'JPG, PNG, GIF или WebP до 5 МБ' }}</small>
         </div>
@@ -48,16 +47,15 @@
     <button class="photo-modal-close" type="button" aria-label="{{ 'Close' if en else 'Закрыть' }}">×</button>
     <h2 id="photo-modal-title">{{ 'Profile photo' if en else 'Фото профиля' }}</h2>
     <label class="button-link" for="profile-photo-input">{{ 'Choose a new photo' if en else 'Изменить фото' }}</label>
-    {% if user.profile_photo_url %}<button class="secondary photo-remove" type="button">{{ 'Delete photo' if en else 'Удалить фото' }}</button>{% endif %}
+    {% if user.profile_photo_url %}<form method="post" action="/account/photo/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary photo-remove" type="submit">{{ 'Delete photo' if en else 'Удалить фото' }}</button></form>{% endif %}
   </section>
 </div>
 {% endblock %}
 {% block scripts %}<script>
-  const photoModal=document.getElementById('photo-modal'),photoInput=document.getElementById('profile-photo-input'),removePhoto=document.getElementById('remove-profile-photo'),photoStatus=document.getElementById('profile-photo-status');
+  const photoModal=document.getElementById('photo-modal'),photoInput=document.getElementById('profile-photo-input'),photoStatus=document.getElementById('profile-photo-status');
   const closePhotoModal=()=>{photoModal.hidden=true;document.body.classList.remove('menu-open')};
   document.querySelector('.photo-menu-open').addEventListener('click',()=>{photoModal.hidden=false;document.body.classList.add('menu-open');document.querySelector('.photo-modal-close').focus()});
   document.querySelector('.photo-modal-close').addEventListener('click',closePhotoModal);document.querySelector('.photo-modal-backdrop').addEventListener('click',closePhotoModal);
-  photoInput.addEventListener('change',()=>{if(photoInput.files[0]){removePhoto.value='false';photoStatus.textContent=photoInput.files[0].name;closePhotoModal()}});
-  document.querySelector('.photo-remove')?.addEventListener('click',()=>{removePhoto.value='true';photoInput.value='';photoStatus.textContent={{ ('Photo will be deleted after saving' if en else 'Фото будет удалено после сохранения')|tojson }};closePhotoModal()});
+  photoInput.addEventListener('change',()=>{if(photoInput.files[0]){photoStatus.textContent=photoInput.files[0].name;closePhotoModal()}});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!photoModal.hidden)closePhotoModal()});
 </script>{% endblock %}

@@ -177,6 +177,21 @@ def update_account_password(
     return RedirectResponse("/account?saved=password", status_code=303)
 
 
+@app.post("/account/photo/delete")
+def delete_account_photo(request: Request, csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    if not valid_csrf_token(request, csrf_token):
+        return RedirectResponse("/account", status_code=303)
+    old_photo = user.profile_photo_url
+    user.profile_photo_url = None
+    db.commit()
+    if old_photo:
+        delete_local_photos(user.id, [old_photo])
+    return RedirectResponse("/account?saved=profile", status_code=303)
+
+
 @app.post("/account/delete")
 def delete_account(
     request: Request,
