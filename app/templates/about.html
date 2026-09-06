@@ -51,6 +51,13 @@
   </section>
 
   <section class="about-process reveal-group">
+    <svg class="process-route-animation" viewBox="0 0 1200 560" preserveAspectRatio="none" aria-hidden="true">
+      <path id="process-route" d="M-30 480 C210 420 290 520 470 365 S760 250 870 330 S1020 210 1230 90"/>
+      <circle class="route-checkpoint checkpoint-one" cx="470" cy="365" r="7"/>
+      <circle class="route-checkpoint checkpoint-two" cx="870" cy="330" r="7"/>
+      <circle class="route-checkpoint checkpoint-three" cx="1140" cy="135" r="7"/>
+      <circle class="route-runner" r="6"><animateMotion dur="9s" repeatCount="indefinite" rotate="auto"><mpath href="#process-route"/></animateMotion></circle>
+    </svg>
     <header class="process-heading reveal">
       <p class="eyebrow">{{ 'From a moment to a map' if en else 'От момента до точки на карте' }}</p>
       <h2>{{ 'Your carefully collected journey' if en else 'Ваше бережно собранное путешествие' }}</h2>
@@ -60,7 +67,6 @@
       <article class="reveal"><span>02</span><h3>{{ 'Pin it' if en else 'Отметьте' }}</h3><p>{{ 'Nomad finds the location, or lets you choose the exact point.' if en else 'Nomad найдёт локацию или позволит выбрать точную точку вручную.' }}</p></article>
       <article class="reveal"><span>03</span><h3>{{ 'Return' if en else 'Возвращайтесь' }}</h3><p>{{ 'Open the map whenever you want to revisit the story.' if en else 'Открывайте карту, когда захочется снова вернуться к этой истории.' }}</p></article>
     </div>
-    <div class="process-visual reveal" role="img" aria-label="{{ 'An animated route through travel memories' if en else 'Анимированный маршрут через воспоминания о путешествии' }}"></div>
   </section>
 
   <section class="about-closing reveal">
