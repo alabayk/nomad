@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Мои воспоминания — Nomad{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">
+{% endblock %}
+{% block content %}
+<div class="dashboard-shell">
+  <nav class="map-tabs" aria-label="Разделы карты">
+    <a class="active" href="/dashboard">Места</a>
+    <a href="/countries">Посещённые страны</a>
+    <a href="/wishlist">Хочу посетить</a>
+  </nav>
+  <header class="dashboard-header">
+    <div>
+      <p class="eyebrow">Личная карта {{ user.username }}</p>
+      <h1>Мои воспоминания</h1>
+    </div>
+    <div class="header-actions">
+      <a class="button-link" href="/memories/new">+ Добавить место</a>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="secondary" type="submit">Выйти</button>
+      </form>
+    </div>
+  </header>
+
+  <form class="filters" id="memory-filters" method="get" action="/dashboard">
+    <label>Год
+      <select name="year" id="filter-year">
+        <option value="">Все годы</option>
+        {% for year in years %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Страна
+      <select name="country" id="filter-country">
+        <option value="">Все страны</option>
+        {% for code, name in countries %}<option value="{{ code }}" {% if selected_country|upper == code %}selected{% endif %}>{{ name or code }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Показать</button>
+    {% if selected_year or selected_country %}<a href="/dashboard">Сбросить</a>{% endif %}
+  </form>
+
+  <section class="map-panel">
+    <div id="map" aria-label="Карта воспоминаний"></div>
+  </section>
+
+  <section class="memory-list-section">
+    <div class="section-heading"><h2>Места</h2><span>{{ memories|length }}</span></div>
+    <div class="memory-grid">
+      {% for memory in memories %}
+      <a class="memory-polaroid" href="/memories/{{ memory.id }}" aria-label="Открыть воспоминание: {{ memory.place_name }}">
+        <span class="polaroid-pin" aria-hidden="true"></span>
+        {% if memory.photo_urls %}<img src="{{ memory.photo_urls[0] }}" alt="Фото: {{ memory.place_name }}" loading="lazy">{% else %}<img src="/static/img/no-photo.svg" alt="Нет фотографии: {{ memory.place_name }}">{% endif %}
+        <span class="polaroid-caption">
+          <strong>{{ memory.place_name }}</strong>
+          <time datetime="{{ memory.visit_date.strftime('%Y-%m') }}">{{ memory.visit_date.strftime('%m.%Y') }}</time>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/maplibre/maplibre-gl.js"></script>
+<script>
+  const filterPairs = {{ filter_pairs | tojson }};
+  const filterForm = document.getElementById('memory-filters');
+  const yearFilter = document.getElementById('filter-year');
+  const countryFilter = document.getElementById('filter-country');
+
+  function replaceOptions(select, items, allLabel, selectedValue) {
+    select.replaceChildren(new Option(allLabel, ''));
+    items.forEach(({value, label}) => select.add(new Option(label, value)));
+    select.value = items.some(item => item.value === selectedValue) ? selectedValue : '';
+  }
+
+  yearFilter.addEventListener('change', () => {
+    const selectedYear = yearFilter.value;
+    const previousCountry = countryFilter.value;
+    const countries = new Map();
+    filterPairs.forEach(item => {
+      if (!selectedYear || String(item.year) === selectedYear) countries.set(item.code, item.name);
+    });
+    replaceOptions(
+      countryFilter,
+      [...countries].sort((a, b) => a[1].localeCompare(b[1], 'ru')).map(([value, label]) => ({value, label})),
+      'Все страны',
+      previousCountry
+    );
+  });
+
+  countryFilter.addEventListener('change', () => {
+    const selectedCountry = countryFilter.value;
+    const previousYear = yearFilter.value;
+    const years = [...new Set(filterPairs
+      .filter(item => !selectedCountry || item.code === selectedCountry)
+      .map(item => item.year))]
+      .sort((a, b) => b - a)
+      .map(value => ({value: String(value), label: String(value)}));
+    replaceOptions(yearFilter, years, 'Все годы', previousYear);
+  });
+
+  filterForm.addEventListener('submit', () => {
+    [yearFilter, countryFilter].forEach(select => { select.disabled = !select.value; });
+  });
+
+  const memories = {{ map_memories | tojson }};
+  let initialMapView;
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: [20, 30],
+    zoom: 1.6,
+    attributionControl: true
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
+  class ResetViewControl {
+    onAdd(controlledMap) {
+      this.map = controlledMap;
+      this.container = document.createElement('div');
+      this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'map-reset-button';
+      button.title = 'Показать все места';
+      button.setAttribute('aria-label', 'Показать все места');
+      button.textContent = '⌂';
+      button.addEventListener('click', () => resetMapView());
+      this.container.appendChild(button);
+      return this.container;
+    }
+    onRemove() { this.container.remove(); this.map = undefined; }
+  }
+  const bounds = new maplibregl.LngLatBounds();
+  memories.forEach((memory) => {
+    const popup = document.createElement('div');
+    popup.className = 'map-popup';
+    if (memory.photo) {
+      const image = document.createElement('img');
+      image.src = memory.photo;
+      image.alt = '';
+      popup.appendChild(image);
+    }
+    const title = document.createElement('strong');
+    title.textContent = memory.place_name;
+    popup.appendChild(title);
+    const date = document.createElement('span');
+    const [year, month] = memory.visit_date.split('-').map(Number);
+    date.textContent = new Intl.DateTimeFormat('ru-RU', {month: 'long', year: 'numeric'})
+      .format(new Date(year, month - 1, 1));
+    popup.appendChild(date);
+    const link = document.createElement('a');
+    link.href = `/memories/${memory.id}`;
+    link.textContent = 'Открыть';
+    popup.appendChild(link);
+    const markerPopup = new maplibregl.Popup({offset: 24}).setDOMContent(popup);
+    new maplibregl.Marker({color: '#a45d32'})
+      .setLngLat([memory.longitude, memory.latitude])
+      .setPopup(markerPopup)
+      .addTo(map);
+    bounds.extend([memory.longitude, memory.latitude]);
+  });
+  function rememberInitialView() {
+    initialMapView = {
+      center: map.getCenter().toArray(),
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      pitch: map.getPitch()
+    };
+  }
+  function resetMapView() {
+    if (!initialMapView) return;
+    map.stop();
+    map.resize();
+    map.jumpTo(initialMapView);
+  }
+  map.addControl(new ResetViewControl(), 'top-right');
+  if (memories.length === 1) map.jumpTo({center: bounds.getCenter(), zoom: 11});
+  if (memories.length > 1) map.fitBounds(bounds, {padding: 60, maxZoom: 11, duration: 0});
+  rememberInitialView();
+</script>
+{% endblock %}

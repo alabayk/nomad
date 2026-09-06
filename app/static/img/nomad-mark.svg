@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Nomad</title>
+  <desc id="description">Маршрут в форме буквы N между двумя путевыми точками</desc>
+  <circle cx="32" cy="32" r="28" fill="#fbf9f2" stroke="#a64e38" stroke-width="2"/>
+  <path d="M18 43V21L46 43V21" fill="none" stroke="#29332d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="43" r="4.5" fill="#a64e38" stroke="#fbf9f2" stroke-width="2"/>
+  <circle cx="46" cy="21" r="4.5" fill="#a64e38" stroke="#fbf9f2" stroke-width="2"/>
+</svg>

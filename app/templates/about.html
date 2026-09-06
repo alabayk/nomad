@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}О Nomad — личная карта путешествий{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">{% endblock %}
+{% block content %}
+<div class="about-page">
+  <section class="about-hero">
+    <div class="about-intro">
+      <p class="eyebrow">Личный путевой архив</p>
+      <h1>Места остаются<br>с вами.</h1>
+      <p class="about-lead">Nomad собирает путешествия не в сухой список, а в живую карту — с фотографиями, короткими историями и планами на будущее.</p>
+      <div class="about-actions">
+        {% if user %}
+        <a class="button-link" href="/dashboard">Открыть мою карту</a>
+        {% else %}
+        <a class="button-link" href="/register">Попробовать</a>
+        <a class="button-link secondary-link" href="/login">У меня уже есть аккаунт</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="demo-map" aria-label="Пример карты воспоминаний">
+      <div id="about-places-map"></div>
+      <small>Пример личной карты</small>
+    </div>
+  </section>
+
+  <section class="about-features">
+    <article><span>01</span><h2>Отмечайте места</h2><p>Введите название локации — Nomad найдёт её координаты. Если геокодер ошибся, точку можно поставить вручную.</p></article>
+    <article><span>02</span><h2>Храните моменты</h2><p>Добавляйте месяц поездки, заметку и фотографии. Каждое воспоминание становится отдельной полароидной карточкой.</p></article>
+    <article><span>03</span><h2>Планируйте дальше</h2><p>Ведите независимую карту стран, которые уже посетили, и тех, куда только собираетесь.</p></article>
+  </section>
+
+  <section class="about-showcase">
+    <div class="demo-countries" aria-label="Пример карты посещённых стран">
+      <div id="about-countries-map"></div>
+      <div class="demo-legend"><i></i> посещённые страны</div>
+    </div>
+    <div class="showcase-copy">
+      <p class="eyebrow">Два взгляда на путешествия</p>
+      <h2>Воспоминания и целые страны</h2>
+      <p>Метки на первой карте показывают конкретные города и места. Карта стран помогает одним взглядом увидеть географию ваших поездок.</p>
+      {% if not user %}<a href="/register">Создать свою карту →</a>{% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/maplibre/maplibre-gl.js"></script>
+<script>
+  const placesDemo = new maplibregl.Map({
+    container: 'about-places-map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: [40, 28], zoom: 1.25, interactive: false, attributionControl: false
+  });
+  const demoPlaces = [
+    {name: 'Париж', coordinates: [2.3522, 48.8566]},
+    {name: 'Стамбул', coordinates: [28.9784, 41.0082]},
+    {name: 'Мальдивы', coordinates: [73.2207, 3.2028]}
+  ];
+  placesDemo.on('load', () => {
+    placesDemo.addSource('demo-route', {type: 'geojson', data: {type: 'Feature', geometry: {type: 'LineString', coordinates: demoPlaces.map(item => item.coordinates)}}});
+    placesDemo.addLayer({id: 'demo-route', type: 'line', source: 'demo-route', paint: {'line-color': '#b65e44', 'line-width': 2, 'line-dasharray': [3, 2]}});
+    demoPlaces.forEach(place => {
+      const marker = document.createElement('div');
+      marker.className = 'about-map-marker';
+      marker.title = place.name;
+      new maplibregl.Marker({element: marker}).setLngLat(place.coordinates).addTo(placesDemo);
+    });
+  });
+
+  const countriesDemo = new maplibregl.Map({
+    container: 'about-countries-map',
+    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#dce7e1'}}]},
+    center: [18, 24], zoom: .25, interactive: false, attributionControl: false
+  });
+  countriesDemo.on('load', async () => {
+    const response = await fetch('/static/data/countries.geojson');
+    const data = await response.json();
+    countriesDemo.addSource('demo-countries', {type: 'geojson', data});
+    countriesDemo.addLayer({id: 'demo-country-base', type: 'fill', source: 'demo-countries', paint: {'fill-color': '#f7f4ec', 'fill-outline-color': '#a7b5ad'}});
+    countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV']]], paint: {'fill-color': '#d77849', 'fill-opacity': .86, 'fill-outline-color': '#8b432a'}});
+    countriesDemo.fitBounds([[-25, -15], [150, 72]], {padding: 10, duration: 0});
+  });
+</script>
+{% endblock %}

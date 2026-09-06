@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Nomad{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">Новый маршрут начинается здесь</p>
+  <h1>Создать аккаунт</h1>
+  <p class="muted">Сохраняйте места и фотографии в личной коллекции.</p>
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/register" enctype="multipart/form-data" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Логин<input name="username" value="{{ username }}" minlength="3" maxlength="64" autocomplete="username" required autofocus></label>
+    <label>Имя<input name="full_name" value="{{ full_name }}" maxlength="100" autocomplete="name" placeholder="Как к вам обращаться" required></label>
+    <label>Пароль<input type="password" name="password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+    <label>Повторите пароль<input type="password" name="password_confirm" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+    <label>Фото профиля <small>Необязательно · JPG, PNG, GIF или WebP до 5 МБ</small><input type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"></label>
+    <button type="submit">Зарегистрироваться</button>
+  </form>
+  <p class="switch-link">Уже есть аккаунт? <a href="/login">Войти</a></p>
+</section>
+{% endblock %}

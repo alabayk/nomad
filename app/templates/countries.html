@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — Nomad{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">
+{% endblock %}
+{% block content %}
+<div class="dashboard-shell">
+  <nav class="map-tabs" aria-label="Разделы карты">
+    <a href="/dashboard">Места</a>
+    <a {% if page_mode == 'visited' %}class="active"{% endif %} href="/countries">Посещённые страны</a>
+    <a {% if page_mode == 'wishlist' %}class="active"{% endif %} href="/wishlist">Хочу посетить</a>
+  </nav>
+  <header class="dashboard-header">
+    <div>
+      <p class="eyebrow">{{ page_eyebrow }}</p>
+      <h1>{{ page_title }}</h1>
+      <p class="muted">{{ page_description }}</p>
+    </div>
+    <a class="button-link secondary-link" href="/dashboard">К местам</a>
+  </header>
+
+  <section class="countries-layout">
+    <div class="map-panel country-map-panel {{ page_mode }}">
+      <div id="countries-map" aria-label="Карта посещённых стран"></div>
+    </div>
+    <aside class="country-sidebar">
+      <form method="post" action="{{ form_action }}" class="add-country-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Добавить страну
+          <select name="country_code" required>
+            <option value="">Выберите страну</option>
+            {% for code, name in available_countries %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+          </select>
+        </label>
+        <button type="submit" {% if not available_countries %}disabled{% endif %}>Добавить</button>
+      </form>
+      <div class="country-list-heading"><strong>Список стран</strong><span>{{ countries|length }}</span></div>
+      <div class="country-list">
+        {% for country in country_items %}
+        <div class="country-row">
+          <div>
+            <button class="country-focus-button" type="button" data-country-code="{{ country.code }}" title="Показать на карте">{{ country.name }}</button>
+            <small>{{ country.code }} · {{ country.source }}</small>
+          </div>
+          {% if country.deletable %}
+          <form method="post" action="{{ delete_prefix }}/{{ country.code }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="icon-button" type="submit" title="Удалить">×</button>
+          </form>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="muted">Пока не отмечено ни одной страны.</p>
+        {% endfor %}
+      </div>
+    </aside>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/maplibre/maplibre-gl.js"></script>
+<script>
+  const visitedCodes = {{ visited_codes | tojson }};
+  const addableCodes = new Set({{ available_countries | tojson }}.map(item => item[0]));
+  const csrfToken = {{ csrf_token | tojson }};
+  const formAction = {{ form_action | tojson }};
+  const selectedLabel = {{ ('в списке желаний' if page_mode == 'wishlist' else 'в посещённых') | tojson }};
+  const actionQuestion = {{ ('Добавить страну «{name}» в список желаний?' if page_mode == 'wishlist' else 'Добавить страну «{name}» в посещённые?') | tojson }};
+  const selectedColor = {{ ('#6e91a7' if page_mode == 'wishlist' else '#d77849') | tojson }};
+  const selectedOutline = {{ ('#405f73' if page_mode == 'wishlist' else '#8b432a') | tojson }};
+  let countriesData;
+  let initialCountryView;
+  const map = new maplibregl.Map({
+    container: 'countries-map',
+    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#dce7e1'}}]},
+    center: [0, 15],
+    zoom: 0,
+    minZoom: 0,
+    maxZoom: 6,
+    attributionControl: false
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
+  class ResetViewControl {
+    onAdd(controlledMap) {
+      this.map = controlledMap;
+      this.container = document.createElement('div');
+      this.container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'map-reset-button';
+      button.title = 'Показать весь мир';
+      button.setAttribute('aria-label', 'Показать весь мир');
+      button.textContent = '⌂';
+      button.addEventListener('click', resetCountryView);
+      this.container.appendChild(button);
+      return this.container;
+    }
+    onRemove() { this.container.remove(); this.map = undefined; }
+  }
+  map.addControl(new ResetViewControl(), 'top-right');
+  function rememberCountryView() {
+    initialCountryView = {
+      center: map.getCenter().toArray(),
+      zoom: map.getZoom(),
+      bearing: 0,
+      pitch: 0
+    };
+  }
+  function resetCountryView() {
+    if (!initialCountryView) return;
+    map.stop();
+    map.resize();
+    map.jumpTo(initialCountryView);
+  }
+  function collectCoordinates(value, points) {
+    if (typeof value[0] === 'number') {
+      points.push(value);
+      return;
+    }
+    value.forEach((part) => collectCoordinates(part, points));
+  }
+  function focusCountry(code) {
+    const feature = countriesData?.features.find((item) => {
+      const properties = item.properties;
+      return (properties.ISO_A2_EH || properties.ISO_A2) === code;
+    });
+    if (!feature) return;
+    const points = [];
+    collectCoordinates(feature.geometry.coordinates, points);
+    const normalLongitudes = points.map((point) => point[0]);
+    const wrappedLongitudes = normalLongitudes.map((longitude) => longitude < 0 ? longitude + 360 : longitude);
+    const span = (values) => Math.max(...values) - Math.min(...values);
+    const useWrapped = span(wrappedLongitudes) < span(normalLongitudes);
+    const bounds = new maplibregl.LngLatBounds();
+    points.forEach(([longitude, latitude]) => {
+      bounds.extend([useWrapped && longitude < 0 ? longitude + 360 : longitude, latitude]);
+    });
+    map.fitBounds(bounds, {padding: 60, maxZoom: 5.5, duration: 650});
+  }
+  map.on('load', async () => {
+    const response = await fetch('/static/data/countries.geojson');
+    countriesData = await response.json();
+    map.addSource('countries', {type: 'geojson', data: countriesData});
+    map.addLayer({
+      id: 'country-base', type: 'fill', source: 'countries',
+      paint: {'fill-color': '#f8f6ef', 'fill-opacity': 1, 'fill-outline-color': '#a6b6ae'}
+    });
+    map.addLayer({
+      id: 'visited-countries', type: 'fill', source: 'countries',
+      filter: ['in', ['get', 'ISO_A2_EH'], ['literal', visitedCodes]],
+      paint: {'fill-color': selectedColor, 'fill-opacity': .82, 'fill-outline-color': selectedOutline}
+    });
+    map.addLayer({
+      id: 'country-hover', type: 'fill', source: 'countries',
+      filter: ['==', ['get', 'ISO_A2_EH'], ''],
+      paint: {'fill-color': '#efb184', 'fill-opacity': .62, 'fill-outline-color': '#7c4934'}
+    });
+    map.addLayer({
+      id: 'visited-tiny-countries', type: 'symbol', source: 'countries',
+      filter: [
+        'all',
+        ['in', ['get', 'ISO_A2_EH'], ['literal', visitedCodes]],
+        ['>', ['get', 'TINY'], 0]
+      ],
+      layout: {
+        'text-field': '●',
+        'text-size': 16,
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+      },
+      paint: {
+        'text-color': selectedColor,
+        'text-halo-color': selectedOutline,
+        'text-halo-width': 1
+      }
+    });
+    let actionPopup;
+    function showCountryAction(event) {
+      const properties = event.features[0].properties;
+      const code = properties.ISO_A2_EH || properties.ISO_A2 || '';
+      const name = properties.NAME_RU || properties.ADMIN || code;
+      if (!code || code === '-99') return;
+
+      actionPopup?.remove();
+      const content = document.createElement('div');
+      content.className = 'country-action-popup';
+      const title = document.createElement('strong');
+      title.textContent = name;
+      content.appendChild(title);
+
+      if (visitedCodes.includes(code)) {
+        const note = document.createElement('span');
+        note.textContent = `Уже ${selectedLabel}`;
+        content.appendChild(note);
+      } else if (addableCodes.has(code)) {
+        const question = document.createElement('span');
+        question.textContent = actionQuestion.replace('{name}', name);
+        content.appendChild(question);
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = formAction;
+        form.className = 'country-popup-actions';
+        const codeInput = document.createElement('input');
+        codeInput.type = 'hidden';
+        codeInput.name = 'country_code';
+        codeInput.value = code;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        const addButton = document.createElement('button');
+        addButton.type = 'submit';
+        addButton.className = 'country-confirm';
+        addButton.textContent = '✓';
+        addButton.title = `Добавить ${name}`;
+        addButton.setAttribute('aria-label', `Добавить ${name}`);
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'country-cancel';
+        cancelButton.textContent = '×';
+        cancelButton.title = 'Отмена';
+        cancelButton.setAttribute('aria-label', 'Отмена');
+        cancelButton.addEventListener('click', () => actionPopup.remove());
+        form.append(codeInput, csrfInput, addButton, cancelButton);
+        content.appendChild(form);
+      } else {
+        const note = document.createElement('span');
+        note.textContent = 'Эту территорию нельзя добавить отдельно';
+        content.appendChild(note);
+      }
+      actionPopup = new maplibregl.Popup({closeButton: false, offset: 12})
+        .setLngLat(event.lngLat)
+        .setDOMContent(content)
+        .addTo(map);
+    }
+    const hoverPopup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 12
+    });
+    map.on('mousemove', 'country-base', (event) => {
+      const properties = event.features[0].properties;
+      const code = properties.ISO_A2_EH || properties.ISO_A2 || '';
+      const name = properties.NAME_RU || properties.ADMIN || code;
+      map.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], code]);
+      hoverPopup.setLngLat(event.lngLat).setText(name).addTo(map);
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'country-base', () => {
+      map.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
+      hoverPopup.remove();
+      map.getCanvas().style.cursor = '';
+    });
+    map.on('click', 'country-base', showCountryAction);
+    document.querySelectorAll('.country-focus-button').forEach((button) => {
+      button.addEventListener('click', () => focusCountry(button.dataset.countryCode));
+    });
+    map.fitBounds([[-179, -58], [179, 82]], {padding: 18, duration: 0});
+    rememberCountryView();
+  });
+</script>
+{% endblock %}

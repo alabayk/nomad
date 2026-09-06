@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set en = user.language == 'en' %}
+{% block title %}{{ 'Settings' if en else 'Настройки' }} — Nomad{% endblock %}
+{% block content %}
+<div class="settings-page">
+  <header class="settings-header"><p class="eyebrow">Nomad</p><h1>{{ 'Settings' if en else 'Настройки' }}</h1><p class="muted">{{ 'Adjust the interface and manage your travel data.' if en else 'Настройте интерфейс и управляйте данными о путешествиях.' }}</p></header>
+  {% if notice %}<div class="account-notice" role="status">{{ notice }}</div>{% endif %}
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  <div class="settings-grid">
+    <section class="account-panel"><h2>{{ 'Appearance' if en else 'Внешний вид' }}</h2>
+      <form method="post" action="/settings/preferences" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <fieldset class="choice-group"><legend>{{ 'Language' if en else 'Язык' }}</legend>
+          <label class="choice-card"><input type="radio" name="language" value="ru" {% if user.language == 'ru' %}checked{% endif %}><span><strong>RU</strong> Русский</span></label>
+          <label class="choice-card"><input type="radio" name="language" value="en" {% if user.language == 'en' %}checked{% endif %}><span><strong>EN</strong> English</span></label>
+        </fieldset>
+        <fieldset class="choice-group"><legend>{{ 'Theme' if en else 'Тема' }}</legend>
+          <label class="choice-card"><input type="radio" name="theme" value="dark" {% if user.theme == 'dark' %}checked{% endif %}><span>{{ 'Dark' if en else 'Тёмная' }}</span></label>
+          <label class="choice-card"><input type="radio" name="theme" value="light" {% if user.theme == 'light' %}checked{% endif %}><span>{{ 'Light' if en else 'Светлая' }}</span></label>
+        </fieldset>
+        <div class="map-mode-note"><strong>{{ 'Map display' if en else 'Отображение карт' }}</strong><span>{{ 'Solid colors' if en else 'Однотонная заливка' }}</span></div>
+        <button type="submit">{{ 'Save settings' if en else 'Сохранить настройки' }}</button>
+      </form>
+    </section>
+    <section class="account-panel settings-danger"><h2>{{ 'Travel data' if en else 'Данные путешествий' }}</h2><p class="muted">{{ 'Choose which information to permanently remove.' if en else 'Выберите, какую информацию удалить без возможности восстановления.' }}</p>
+      <form method="post" action="/settings/delete-data" class="delete-data-form" onsubmit="return confirm('{{ 'Delete selected travel data?' if en else 'Удалить выбранные данные о путешествиях?' }}')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="choice-card"><input type="radio" name="scope" value="visits" required><span><strong>{{ 'Visits' if en else 'Посещения' }}</strong><small>{{ 'Memories, photos and visited countries' if en else 'Воспоминания, фотографии и посещённые страны' }}</small></span></label>
+        <label class="choice-card"><input type="radio" name="scope" value="wishlist" required><span><strong>{{ 'Wishlist' if en else 'Желаемые страны' }}</strong><small>{{ 'Only countries you want to visit' if en else 'Только список стран, которые хочется посетить' }}</small></span></label>
+        <label class="choice-card"><input type="radio" name="scope" value="all" required><span><strong>{{ 'Everything' if en else 'Всё сразу' }}</strong><small>{{ 'All travel data, keeping the account' if en else 'Все данные путешествий, но не сам аккаунт' }}</small></span></label>
+        <button class="danger" type="submit">{{ 'Delete data' if en else 'Удалить данные' }}</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

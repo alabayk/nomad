@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ memory.place_name }} — Nomad{% endblock %}
+{% block content %}
+<article class="detail-card">
+  <nav class="detail-nav"><a href="/dashboard">← К карте</a><a href="/memories/{{ memory.id }}/edit">Редактировать</a></nav>
+  <p class="eyebrow">{{ memory.country_name or 'Воспоминание' }}</p>
+  <h1>{{ memory.place_name }}</h1>
+  <time datetime="{{ memory.visit_date.strftime('%Y-%m') }}">{{ memory.visit_date.strftime('%m.%Y') }}</time>
+  <p class="memory-location"><strong>Локация:</strong> {{ memory.location_name or memory.place_name }}</p>
+  {% if memory.description %}<p class="memory-description">{{ memory.description }}</p>{% endif %}
+  {% if memory.photo_urls %}
+  <div class="gallery">
+    {% for url in memory.photo_urls %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer"><img src="{{ url }}" alt="Фото {{ loop.index }}: {{ memory.place_name }}" loading="lazy"></a>{% endfor %}
+  </div>
+  {% endif %}
+  <footer class="detail-footer">
+    <span>{{ '%.5f'|format(memory.latitude) }}, {{ '%.5f'|format(memory.longitude) }}</span>
+    <form method="post" action="/memories/{{ memory.id }}/delete" onsubmit="return confirm('Удалить это воспоминание?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="danger" type="submit">Удалить</button>
+    </form>
+  </footer>
+</article>
+{% endblock %}

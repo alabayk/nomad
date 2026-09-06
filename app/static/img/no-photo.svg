@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title description">
+  <title id="title">Нет фотографии</title>
+  <desc id="description">Стилизованный пейзаж с горами и солнцем</desc>
+  <rect width="800" height="600" fill="#e8eee9"/>
+  <circle cx="590" cy="175" r="62" fill="#dba276"/>
+  <path d="M0 510 215 275l128 143 92-98 205 190Z" fill="#91aa9d"/>
+  <path d="M185 307 215 275l44 49-31-10Z" fill="#f8f6ef"/>
+  <path d="M343 418 435 320l78 86-54-25Z" fill="#f8f6ef"/>
+  <path d="M0 510h800v90H0Z" fill="#c8d9cf"/>
+  <text x="400" y="555" text-anchor="middle" fill="#405b50" font-family="Arial, sans-serif" font-size="34" font-weight="700">НЕТ ФОТО</text>
+</svg>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Nomad{% endblock %}
+{% block content %}
+<section class="section-placeholder">
+  <p class="eyebrow">Nomad · новый раздел</p>
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+  {% if user %}<a class="button-link" href="/dashboard">Вернуться к карте</a>{% else %}<div class="placeholder-actions"><a class="button-link" href="/register">Попробовать</a><a href="/login">Уже есть аккаунт</a></div>{% endif %}
+</section>
+{% endblock %}

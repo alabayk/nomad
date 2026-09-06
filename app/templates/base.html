@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="{{ user.language if user and user.language else 'ru' }}" data-theme="{{ user.theme if user and user.theme else 'dark' }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Nomad{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', path='/img/nomad-mark.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}?v=settings2">
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Nomad — на главную">
+        <img class="brand-mark" src="{{ url_for('static', path='/img/nomad-mark.svg') }}" alt="" aria-hidden="true">
+        <span class="brand-copy"><strong>Nomad</strong><small>личный путевой архив</small></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="site-menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </header>
+    <div class="menu-backdrop" hidden></div>
+    <aside class="site-menu" id="site-menu" aria-hidden="true" aria-label="Основное меню">
+      <div class="menu-heading">
+        <span>Меню</span>
+        <button class="menu-close" type="button" aria-label="Закрыть меню">×</button>
+      </div>
+      <nav class="menu-nav">
+        <a href="/about" {% if request.url.path == '/about' %}class="active"{% endif %}><span>О нас</span><small>О проекте Nomad</small></a>
+        {% if user %}
+        <a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}><span>Места</span><small>Карта воспоминаний</small></a>
+        <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>Посещённые страны</span><small>Где я уже был</small></a>
+        <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>Хочу посетить</span><small>Будущие маршруты</small></a>
+        {% endif %}
+        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>Настройки</span><small>Язык, тема и карты</small></a>
+      </nav>
+      <a class="menu-account" href="/account">
+        <span class="menu-avatar" aria-hidden="true">{% if user and user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="">{% elif user %}{{ user.initials }}{% else %}<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.6-5 3.2-7 8-7s7.4 2 8 7"/></svg>{% endif %}</span>
+        <span><strong>{% if user %}{{ user.full_name or user.username }}{% else %}Аккаунт{% endif %}</strong><small>{% if user %}Профиль и безопасность{% else %}Войти или зарегистрироваться{% endif %}</small></span>
+      </a>
+    </aside>
+    <main class="page-shell">{% block content %}{% endblock %}</main>
+    <script>
+      const menuToggle = document.querySelector('.menu-toggle');
+      const menuClose = document.querySelector('.menu-close');
+      const siteMenu = document.getElementById('site-menu');
+      const menuBackdrop = document.querySelector('.menu-backdrop');
+      function setMenu(open) {
+        siteMenu.classList.toggle('open', open);
+        siteMenu.setAttribute('aria-hidden', String(!open));
+        menuToggle.setAttribute('aria-expanded', String(open));
+        menuBackdrop.hidden = !open;
+        document.body.classList.toggle('menu-open', open);
+        if (open) menuClose.focus();
+      }
+      menuToggle.addEventListener('click', () => setMenu(true));
+      menuClose.addEventListener('click', () => setMenu(false));
+      menuBackdrop.addEventListener('click', () => setMenu(false));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && siteMenu.classList.contains('open')) setMenu(false);
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

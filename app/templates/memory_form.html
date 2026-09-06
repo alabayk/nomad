@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Nomad{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">
+{% endblock %}
+{% block content %}
+<section class="form-card wide-card">
+  <div class="form-heading">
+    <div><p class="eyebrow">Nomad</p><h1>{{ title }}</h1></div>
+    <a href="{% if memory %}/memories/{{ memory.id }}{% else %}/dashboard{% endif %}">Отмена</a>
+  </div>
+  {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="{{ action }}" enctype="multipart/form-data" class="memory-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="latitude" id="selected-latitude" value="{{ values.get('latitude', memory.latitude if memory else '') }}">
+    <input type="hidden" name="longitude" id="selected-longitude" value="{{ values.get('longitude', memory.longitude if memory else '') }}">
+    <input type="hidden" name="country_code" id="selected-country-code" value="{{ values.get('country_code', (memory.country_code or '') if memory else '') }}">
+    <input type="hidden" name="country_name" id="selected-country-name" value="{{ values.get('country_name', (memory.country_name or '') if memory else '') }}">
+    <input type="hidden" name="resolved_location_name" id="resolved-location-name" value="{{ values.get('resolved_location_name', (memory.location_name or memory.place_name) if memory else '') }}">
+    <div class="form-row">
+      <label>Название воспоминания
+        <input name="place_name" maxlength="200" value="{{ values.get('place_name', memory.place_name if memory else '') }}" placeholder="Например, Наш медовый месяц" required autofocus>
+        <small>Эта подпись отображается на полароиде и в воспоминании.</small>
+      </label>
+      <label>Месяц посещения
+        <input type="month" name="visit_date" value="{{ values.get('visit_date', memory.visit_date.strftime('%Y-%m') if memory else '') }}" required>
+        <small>Точный день указывать не нужно.</small>
+      </label>
+    </div>
+    <section class="location-picker">
+      <div class="location-search-row">
+        <label>Локация
+          <input id="location-name" name="location_name" maxlength="250" value="{{ values.get('location_name', (memory.location_name or memory.place_name) if memory else '') }}" placeholder="Например, Club Med Kani, Maldives" required>
+          <small>Это поле используется только для поиска точки на карте.</small>
+        </label>
+        <button id="find-location" type="button">Найти на карте</button>
+      </div>
+      <p id="location-status" class="location-status" aria-live="polite">Проверьте маркер. Если место найдено неверно, поставьте его кликом по карте.</p>
+      <div id="location-picker-map" aria-label="Выбор локации на карте"></div>
+      <small>Кликните в нужной точке карты — выбранные вручную координаты заменят результат поиска.</small>
+    </section>
+    <label>Воспоминание
+      <textarea name="description" maxlength="5000" rows="7" placeholder="Что особенно запомнилось?">{{ values.get('description', memory.description if memory else '') }}</textarea>
+    </label>
+    <label>Ссылки на фотографии
+      <textarea name="photo_urls" rows="3" placeholder="Одна ссылка http:// или https:// на строку">{{ values.get('photo_urls', external_urls) }}</textarea>
+    </label>
+    <label>Загрузить фотографии
+      <input type="file" name="photos" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+      <small>JPG, PNG, GIF или WebP; до 5 МБ каждое, максимум 10 фото вместе со ссылками.</small>
+    </label>
+    {% if local_urls %}
+    <fieldset class="existing-photos"><legend>Загруженные фотографии</legend>
+      {% for url in local_urls %}
+      <label class="existing-photo"><img src="{{ url }}" alt=""><span><input type="checkbox" name="remove_photo" value="{{ url }}"> Удалить</span></label>
+      {% endfor %}
+    </fieldset>
+    {% endif %}
+    <button type="submit">{% if memory %}Сохранить изменения{% else %}Добавить воспоминание{% endif %}</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/maplibre/maplibre-gl.js"></script>
+<script>
+  const locationInput = document.getElementById('location-name');
+  const latitudeInput = document.getElementById('selected-latitude');
+  const longitudeInput = document.getElementById('selected-longitude');
+  const countryCodeInput = document.getElementById('selected-country-code');
+  const countryNameInput = document.getElementById('selected-country-name');
+  const resolvedNameInput = document.getElementById('resolved-location-name');
+  const status = document.getElementById('location-status');
+  const initialLatitude = Number.parseFloat(latitudeInput.value);
+  const initialLongitude = Number.parseFloat(longitudeInput.value);
+  const hasInitialPoint = Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude);
+  const pickerMap = new maplibregl.Map({
+    container: 'location-picker-map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: hasInitialPoint ? [initialLongitude, initialLatitude] : [15, 25],
+    zoom: hasInitialPoint ? 11 : 1.5,
+    attributionControl: true
+  });
+  pickerMap.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
+  let pickerMarker;
+
+  function setMarker(latitude, longitude, zoom = 12) {
+    if (!pickerMarker) pickerMarker = new maplibregl.Marker({color: '#a45d32'});
+    pickerMarker.setLngLat([longitude, latitude]).addTo(pickerMap);
+    pickerMap.flyTo({center: [longitude, latitude], zoom, duration: 550});
+  }
+  function storePoint(data, resolvedName) {
+    latitudeInput.value = Number(data.latitude).toFixed(6);
+    longitudeInput.value = Number(data.longitude).toFixed(6);
+    countryCodeInput.value = data.country_code || '';
+    countryNameInput.value = data.country_name || '';
+    resolvedNameInput.value = resolvedName;
+    setMarker(Number(data.latitude), Number(data.longitude));
+  }
+  if (hasInitialPoint) setMarker(initialLatitude, initialLongitude, 11);
+
+  locationInput.addEventListener('input', () => {
+    if (locationInput.value.trim().toLocaleLowerCase('ru-RU') === resolvedNameInput.value.trim().toLocaleLowerCase('ru-RU')) return;
+    latitudeInput.value = '';
+    longitudeInput.value = '';
+    countryCodeInput.value = '';
+    countryNameInput.value = '';
+    resolvedNameInput.value = '';
+    if (pickerMarker) { pickerMarker.remove(); pickerMarker = undefined; }
+    status.textContent = 'Нажмите «Найти на карте» или поставьте точку вручную.';
+  });
+
+  document.getElementById('find-location').addEventListener('click', async () => {
+    const query = locationInput.value.trim();
+    if (!query) {
+      status.textContent = 'Сначала введите название локации.';
+      locationInput.focus();
+      return;
+    }
+    status.textContent = 'Ищу локацию…';
+    try {
+      const response = await fetch(`/api/geocode?query=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'Место не найдено.');
+      storePoint(data, query);
+      status.textContent = `Найдено: ${data.display_name}. Если точка неверна, кликните по нужному месту на карте.`;
+    } catch (error) {
+      status.textContent = `${error.message} Найдите место на карте и поставьте точку кликом.`;
+    }
+  });
+
+  pickerMap.on('click', async (event) => {
+    const latitude = event.lngLat.lat;
+    const longitude = event.lngLat.lng;
+    if (!locationInput.value.trim()) {
+      locationInput.value = `Точка на карте ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+    }
+    const resolvedName = locationInput.value.trim();
+    storePoint({latitude, longitude, country_code: '', country_name: ''}, resolvedName);
+    status.textContent = `Точка выбрана вручную: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}. Определяю страну…`;
+    try {
+      const response = await fetch(`/api/reverse-geocode?latitude=${latitude}&longitude=${longitude}`);
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'Страна не определена.');
+      countryCodeInput.value = data.country_code || '';
+      countryNameInput.value = data.country_name || '';
+      status.textContent = `Точка выбрана вручную${data.country_name ? ` · ${data.country_name}` : ''}.`;
+    } catch (error) {
+      status.textContent = `Точка выбрана вручную. ${error.message} Координаты всё равно можно сохранить.`;
+    }
+  });
+</script>
+{% endblock %}
