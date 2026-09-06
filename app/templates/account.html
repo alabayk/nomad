@@ -46,16 +46,22 @@
   <section class="photo-modal-card" role="dialog" aria-modal="true" aria-labelledby="photo-modal-title">
     <button class="photo-modal-close" type="button" aria-label="{{ 'Close' if en else 'Закрыть' }}">×</button>
     <h2 id="photo-modal-title">{{ 'Profile photo' if en else 'Фото профиля' }}</h2>
-    <label class="button-link" for="profile-photo-input">{{ 'Choose a new photo' if en else 'Изменить фото' }}</label>
-    {% if user.profile_photo_url %}<form method="post" action="/account/photo/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary photo-remove" type="submit">{{ 'Delete photo' if en else 'Удалить фото' }}</button></form>{% endif %}
+    <div class="photo-modal-actions">
+      <label class="button-link" for="profile-photo-input">{{ 'Choose a new photo' if en else 'Изменить фото' }}</label>
+      {% if user.profile_photo_url %}<button class="secondary photo-remove" type="button">{{ 'Delete photo' if en else 'Удалить фото' }}</button>{% endif %}
+    </div>
+    {% if user.profile_photo_url %}<div class="photo-delete-confirm" hidden><p>{{ 'Confirm photo deletion?' if en else 'Подтвердить удаление фото?' }}</p><form method="post" action="/account/photo/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="photo-confirm" type="submit">{{ 'Confirm' if en else 'Подтвердить' }}</button></form><button class="secondary photo-cancel" type="button">{{ 'Cancel' if en else 'Отменить' }}</button></div>{% endif %}
   </section>
 </div>
 {% endblock %}
 {% block scripts %}<script>
   const photoModal=document.getElementById('photo-modal'),photoInput=document.getElementById('profile-photo-input'),photoStatus=document.getElementById('profile-photo-status');
-  const closePhotoModal=()=>{photoModal.hidden=true;document.body.classList.remove('menu-open')};
+  const closePhotoModal=()=>{photoModal.hidden=true;document.body.classList.remove('menu-open');if(deleteConfirm){deleteConfirm.hidden=true;modalActions.hidden=false}};
   document.querySelector('.photo-menu-open').addEventListener('click',()=>{photoModal.hidden=false;document.body.classList.add('menu-open');document.querySelector('.photo-modal-close').focus()});
   document.querySelector('.photo-modal-close').addEventListener('click',closePhotoModal);document.querySelector('.photo-modal-backdrop').addEventListener('click',closePhotoModal);
   photoInput.addEventListener('change',()=>{if(photoInput.files[0]){photoStatus.textContent=photoInput.files[0].name;closePhotoModal()}});
+  const deleteConfirm=document.querySelector('.photo-delete-confirm'),modalActions=document.querySelector('.photo-modal-actions');
+  document.querySelector('.photo-remove')?.addEventListener('click',()=>{modalActions.hidden=true;deleteConfirm.hidden=false});
+  document.querySelector('.photo-cancel')?.addEventListener('click',()=>{deleteConfirm.hidden=true;modalActions.hidden=false});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!photoModal.hidden)closePhotoModal()});
 </script>{% endblock %}
