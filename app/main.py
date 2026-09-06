@@ -312,14 +312,15 @@ def auth_success_response(db: Session, user: User) -> RedirectResponse:
 
 
 @app.get("/auth/complete", include_in_schema=False)
-def complete_auth(request: Request, ticket: str, db: Session = Depends(get_db)) -> RedirectResponse:
-    response = RedirectResponse("/dashboard", status_code=303)
+def complete_auth(request: Request, ticket: str, db: Session = Depends(get_db)) -> HTMLResponse:
     if current_user(db, request):
-        return response
+        return RedirectResponse("/dashboard", status_code=303)
     user_id = auth_ticket_user_id(ticket)
     user = db.get(User, user_id) if user_id else None
     if user is None:
         return RedirectResponse("/login", status_code=303)
+    response = HTMLResponse("""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="refresh" content="2;url=/dashboard"><style>html,body{margin:0;height:100%;background:#001f1e;color:#f3f5ef;font-family:Arial,sans-serif}body{display:grid;place-items:center}.loader{width:36px;height:36px;border:1px solid #52726e;border-top-color:#e18a6d;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}</style><title>Nomad</title></head><body><div class="loader" aria-label="Вход"></div><script>setTimeout(()=>location.replace('/dashboard'),450)</script></body></html>""")
+    response.headers["Cache-Control"] = "no-store, max-age=0"
     create_session(db, user, response)
     return response
 
