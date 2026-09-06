@@ -203,6 +203,9 @@ def test_user_preferences_are_saved_and_applied(test_session_factory) -> None:
         updated_page = client.get("/settings")
         assert '<html lang="en" data-theme="light">' in updated_page.text
         assert "Appearance" in updated_page.text
+        assert "My memories" in client.get("/dashboard").text
+        assert "Account management" in client.get("/account").text
+        assert "Visited countries" in client.get("/countries").text
 
     with test_session_factory() as db:
         user = db.scalar(select(User).where(User.username == "settings_user"))

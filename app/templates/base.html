@@ -1,3 +1,4 @@
+{% set en = user and user.language == 'en' %}
 <!doctype html>
 <html lang="{{ user.language if user and user.language else 'ru' }}" data-theme="{{ user.theme if user and user.theme else 'dark' }}">
   <head>
@@ -10,32 +11,32 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Nomad — на главную">
+      <a class="brand" href="/" aria-label="{{ 'Nomad — home' if en else 'Nomad — на главную' }}">
         <img class="brand-mark" src="/static/img/nomad-mark.svg" alt="" aria-hidden="true">
-        <span class="brand-copy"><strong>Nomad</strong><small>личный путевой архив</small></span>
+        <span class="brand-copy"><strong>Nomad</strong><small>{{ 'personal travel archive' if en else 'личный путевой архив' }}</small></span>
       </a>
-      <button class="menu-toggle" type="button" aria-label="Открыть меню" aria-controls="site-menu" aria-expanded="false">
+      <button class="menu-toggle" type="button" aria-label="{{ 'Open menu' if en else 'Открыть меню' }}" aria-controls="site-menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </header>
     <div class="menu-backdrop" hidden></div>
-    <aside class="site-menu" id="site-menu" aria-hidden="true" aria-label="Основное меню">
+    <aside class="site-menu" id="site-menu" aria-hidden="true" aria-label="{{ 'Main menu' if en else 'Основное меню' }}">
       <div class="menu-heading">
-        <span>Меню</span>
-        <button class="menu-close" type="button" aria-label="Закрыть меню">×</button>
+        <span>{{ 'Menu' if en else 'Меню' }}</span>
+        <button class="menu-close" type="button" aria-label="{{ 'Close menu' if en else 'Закрыть меню' }}">×</button>
       </div>
       <nav class="menu-nav">
-        <a href="/about" {% if request.url.path == '/about' %}class="active"{% endif %}><span>О нас</span><small>О проекте Nomad</small></a>
+        <a href="/about" {% if request.url.path == '/about' %}class="active"{% endif %}><span>{{ 'About' if en else 'О нас' }}</span><small>{{ 'About Nomad' if en else 'О проекте Nomad' }}</small></a>
         {% if user %}
-        <a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}><span>Места</span><small>Карта воспоминаний</small></a>
-        <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>Посещённые страны</span><small>Где я уже был</small></a>
-        <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>Хочу посетить</span><small>Будущие маршруты</small></a>
+        <a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}><span>{{ 'Places' if en else 'Места' }}</span><small>{{ 'Memory map' if en else 'Карта воспоминаний' }}</small></a>
+        <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
+        <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
         {% endif %}
-        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>Настройки</span><small>Язык, тема и карты</small></a>
+        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, theme and maps' if en else 'Язык, тема и карты' }}</small></a>
       </nav>
       <a class="menu-account" href="/account">
         <span class="menu-avatar" aria-hidden="true">{% if user and user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="">{% elif user %}{{ user.initials }}{% else %}<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.6-5 3.2-7 8-7s7.4 2 8 7"/></svg>{% endif %}</span>
-        <span><strong>{% if user %}{{ user.full_name or user.username }}{% else %}Аккаунт{% endif %}</strong><small>{% if user %}Профиль и безопасность{% else %}Войти или зарегистрироваться{% endif %}</small></span>
+        <span><strong>{% if user %}{{ user.full_name or user.username }}{% else %}{{ 'Account' if en else 'Аккаунт' }}{% endif %}</strong><small>{% if user %}{{ 'Profile and security' if en else 'Профиль и безопасность' }}{% else %}{{ 'Sign in or register' if en else 'Войти или зарегистрироваться' }}{% endif %}</small></span>
       </a>
     </aside>
     <main class="page-shell">{% block content %}{% endblock %}</main>

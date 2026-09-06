@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}О Nomad — личная карта путешествий{% endblock %}
+{% block title %}{{ 'About Nomad — personal travel map' if en else 'О Nomad — личная карта путешествий' }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">{% endblock %}
 {% block content %}
 <div class="about-page">
   <section class="about-hero">
     <div class="about-intro">
-      <p class="eyebrow">Личный путевой архив</p>
-      <h1>Места остаются<br>с вами.</h1>
-      <p class="about-lead">Nomad собирает путешествия не в сухой список, а в живую карту — с фотографиями, короткими историями и планами на будущее.</p>
+      <p class="eyebrow">{{ 'Personal travel archive' if en else 'Личный путевой архив' }}</p>
+      <h1>{{ 'Places stay' if en else 'Места остаются' }}<br>{{ 'with you.' if en else 'с вами.' }}</h1>
+      <p class="about-lead">{{ 'Nomad turns your journeys into a living map with photos, short stories and future plans.' if en else 'Nomad собирает путешествия не в сухой список, а в живую карту — с фотографиями, короткими историями и планами на будущее.' }}</p>
       <div class="about-actions">
         {% if user %}
-        <a class="button-link" href="/dashboard">Открыть мою карту</a>
+        <a class="button-link" href="/dashboard">{{ 'Open my map' if en else 'Открыть мою карту' }}</a>
         {% else %}
         <a class="button-link" href="/register">Попробовать</a>
         <a class="button-link secondary-link" href="/login">У меня уже есть аккаунт</a>
@@ -19,25 +19,25 @@
     </div>
     <div class="demo-map" aria-label="Пример карты воспоминаний">
       <div id="about-places-map"></div>
-      <small>Пример личной карты</small>
+      <small>{{ 'Personal map example' if en else 'Пример личной карты' }}</small>
     </div>
   </section>
 
   <section class="about-features">
-    <article><span>01</span><h2>Отмечайте места</h2><p>Введите название локации — Nomad найдёт её координаты. Если геокодер ошибся, точку можно поставить вручную.</p></article>
-    <article><span>02</span><h2>Храните моменты</h2><p>Добавляйте месяц поездки, заметку и фотографии. Каждое воспоминание становится отдельной полароидной карточкой.</p></article>
-    <article><span>03</span><h2>Планируйте дальше</h2><p>Ведите независимую карту стран, которые уже посетили, и тех, куда только собираетесь.</p></article>
+    <article><span>01</span><h2>{{ 'Mark places' if en else 'Отмечайте места' }}</h2><p>{{ 'Enter a location and Nomad will find its coordinates. You can correct the point manually.' if en else 'Введите название локации — Nomad найдёт её координаты. Если геокодер ошибся, точку можно поставить вручную.' }}</p></article>
+    <article><span>02</span><h2>{{ 'Keep moments' if en else 'Храните моменты' }}</h2><p>{{ 'Add the month, a note and photos. Every memory becomes its own Polaroid card.' if en else 'Добавляйте месяц поездки, заметку и фотографии. Каждое воспоминание становится отдельной полароидной карточкой.' }}</p></article>
+    <article><span>03</span><h2>{{ 'Plan ahead' if en else 'Планируйте дальше' }}</h2><p>{{ 'Keep separate maps for countries you have visited and those you want to explore.' if en else 'Ведите независимую карту стран, которые уже посетили, и тех, куда только собираетесь.' }}</p></article>
   </section>
 
   <section class="about-showcase">
     <div class="demo-countries" aria-label="Пример карты посещённых стран">
       <div id="about-countries-map"></div>
-      <div class="demo-legend"><i></i> посещённые страны</div>
+      <div class="demo-legend"><i></i> {{ 'visited countries' if en else 'посещённые страны' }}</div>
     </div>
     <div class="showcase-copy">
-      <p class="eyebrow">Два взгляда на путешествия</p>
-      <h2>Воспоминания и целые страны</h2>
-      <p>Метки на первой карте показывают конкретные города и места. Карта стран помогает одним взглядом увидеть географию ваших поездок.</p>
+      <p class="eyebrow">{{ 'Two views of your journeys' if en else 'Два взгляда на путешествия' }}</p>
+      <h2>{{ 'Memories and countries' if en else 'Воспоминания и целые страны' }}</h2>
+      <p>{{ 'Pins show individual places, while the country map reveals the geography of your travels at a glance.' if en else 'Метки на первой карте показывают конкретные города и места. Карта стран помогает одним взглядом увидеть географию ваших поездок.' }}</p>
       {% if not user %}<a href="/register">Создать свою карту →</a>{% endif %}
     </div>
   </section>

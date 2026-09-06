@@ -5,10 +5,10 @@
 {% endblock %}
 {% block content %}
 <div class="dashboard-shell">
-  <nav class="map-tabs" aria-label="Разделы карты">
-    <a href="/dashboard">Места</a>
-    <a {% if page_mode == 'visited' %}class="active"{% endif %} href="/countries">Посещённые страны</a>
-    <a {% if page_mode == 'wishlist' %}class="active"{% endif %} href="/wishlist">Хочу посетить</a>
+  <nav class="map-tabs" aria-label="{{ 'Map sections' if en else 'Разделы карты' }}">
+    <a href="/dashboard">{{ 'Places' if en else 'Места' }}</a>
+    <a {% if page_mode == 'visited' %}class="active"{% endif %} href="/countries">{{ 'Visited countries' if en else 'Посещённые страны' }}</a>
+    <a {% if page_mode == 'wishlist' %}class="active"{% endif %} href="/wishlist">{{ 'Want to visit' if en else 'Хочу посетить' }}</a>
   </nav>
   <header class="dashboard-header">
     <div>
@@ -16,41 +16,41 @@
       <h1>{{ page_title }}</h1>
       <p class="muted">{{ page_description }}</p>
     </div>
-    <a class="button-link secondary-link" href="/dashboard">К местам</a>
+    <a class="button-link secondary-link" href="/dashboard">{{ 'Back to places' if en else 'К местам' }}</a>
   </header>
 
   <section class="countries-layout">
     <div class="map-panel country-map-panel {{ page_mode }}">
-      <div id="countries-map" aria-label="Карта посещённых стран"></div>
+      <div id="countries-map" aria-label="{{ 'Country map' if en else 'Карта посещённых стран' }}"></div>
     </div>
     <aside class="country-sidebar">
       <form method="post" action="{{ form_action }}" class="add-country-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label>Добавить страну
+        <label>{{ 'Add country' if en else 'Добавить страну' }}
           <select name="country_code" required>
-            <option value="">Выберите страну</option>
+            <option value="">{{ 'Choose a country' if en else 'Выберите страну' }}</option>
             {% for code, name in available_countries %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
           </select>
         </label>
-        <button type="submit" {% if not available_countries %}disabled{% endif %}>Добавить</button>
+        <button type="submit" {% if not available_countries %}disabled{% endif %}>{{ 'Add' if en else 'Добавить' }}</button>
       </form>
-      <div class="country-list-heading"><strong>Список стран</strong><span>{{ countries|length }}</span></div>
+      <div class="country-list-heading"><strong>{{ 'Country list' if en else 'Список стран' }}</strong><span>{{ countries|length }}</span></div>
       <div class="country-list">
         {% for country in country_items %}
         <div class="country-row">
           <div>
-            <button class="country-focus-button" type="button" data-country-code="{{ country.code }}" title="Показать на карте">{{ country.name }}</button>
+            <button class="country-focus-button" type="button" data-country-code="{{ country.code }}" title="{{ 'Show on map' if en else 'Показать на карте' }}">{{ country.name }}</button>
             <small>{{ country.code }} · {{ country.source }}</small>
           </div>
           {% if country.deletable %}
           <form method="post" action="{{ delete_prefix }}/{{ country.code }}/delete">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="icon-button" type="submit" title="Удалить">×</button>
+            <button class="icon-button" type="submit" title="{{ 'Delete' if en else 'Удалить' }}">×</button>
           </form>
           {% endif %}
         </div>
         {% else %}
-        <p class="muted">Пока не отмечено ни одной страны.</p>
+        <p class="muted">{{ 'No countries marked yet.' if en else 'Пока не отмечено ни одной страны.' }}</p>
         {% endfor %}
       </div>
     </aside>
@@ -64,8 +64,10 @@
   const addableCodes = new Set({{ available_countries | tojson }}.map(item => item[0]));
   const csrfToken = {{ csrf_token | tojson }};
   const formAction = {{ form_action | tojson }};
-  const selectedLabel = {{ ('в списке желаний' if page_mode == 'wishlist' else 'в посещённых') | tojson }};
-  const actionQuestion = {{ ('Добавить страну «{name}» в список желаний?' if page_mode == 'wishlist' else 'Добавить страну «{name}» в посещённые?') | tojson }};
+  const selectedLabel = {{ (('in your wishlist' if page_mode == 'wishlist' else 'visited') if en else ('в списке желаний' if page_mode == 'wishlist' else 'в посещённых')) | tojson }};
+  const actionQuestion = {{ (('Add “{name}” to your wishlist?' if page_mode == 'wishlist' else 'Add “{name}” to visited countries?') if en else ('Добавить страну «{name}» в список желаний?' if page_mode == 'wishlist' else 'Добавить страну «{name}» в посещённые?')) | tojson }};
+  const alreadyLabel = {{ ('Already' if en else 'Уже') | tojson }};
+  const addLabel = {{ ('Add' if en else 'Добавить') | tojson }};
   const selectedColor = {{ ('#6e91a7' if page_mode == 'wishlist' else '#d77849') | tojson }};
   const selectedOutline = {{ ('#405f73' if page_mode == 'wishlist' else '#8b432a') | tojson }};
   let countriesData;
@@ -88,8 +90,8 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'map-reset-button';
-      button.title = 'Показать весь мир';
-      button.setAttribute('aria-label', 'Показать весь мир');
+      button.title = {{ ('Show the whole world' if en else 'Показать весь мир') | tojson }};
+      button.setAttribute('aria-label', button.title);
       button.textContent = '⌂';
       button.addEventListener('click', resetCountryView);
       this.container.appendChild(button);
@@ -178,7 +180,7 @@
     function showCountryAction(event) {
       const properties = event.features[0].properties;
       const code = properties.ISO_A2_EH || properties.ISO_A2 || '';
-      const name = properties.NAME_RU || properties.ADMIN || code;
+          const name = {{ 'properties.ADMIN || properties.NAME_RU || code' if en else 'properties.NAME_RU || properties.ADMIN || code' }};
       if (!code || code === '-99') return;
 
       actionPopup?.remove();
@@ -190,7 +192,7 @@
 
       if (visitedCodes.includes(code)) {
         const note = document.createElement('span');
-        note.textContent = `Уже ${selectedLabel}`;
+        note.textContent = `${alreadyLabel} ${selectedLabel}`;
         content.appendChild(note);
       } else if (addableCodes.has(code)) {
         const question = document.createElement('span');
@@ -212,20 +214,20 @@
         addButton.type = 'submit';
         addButton.className = 'country-confirm';
         addButton.textContent = '✓';
-        addButton.title = `Добавить ${name}`;
-        addButton.setAttribute('aria-label', `Добавить ${name}`);
+        addButton.title = `${addLabel} ${name}`;
+        addButton.setAttribute('aria-label', addButton.title);
         const cancelButton = document.createElement('button');
         cancelButton.type = 'button';
         cancelButton.className = 'country-cancel';
         cancelButton.textContent = '×';
-        cancelButton.title = 'Отмена';
-        cancelButton.setAttribute('aria-label', 'Отмена');
+        cancelButton.title = {{ ('Cancel' if en else 'Отмена') | tojson }};
+        cancelButton.setAttribute('aria-label', cancelButton.title);
         cancelButton.addEventListener('click', () => actionPopup.remove());
         form.append(codeInput, csrfInput, addButton, cancelButton);
         content.appendChild(form);
       } else {
         const note = document.createElement('span');
-        note.textContent = 'Эту территорию нельзя добавить отдельно';
+        note.textContent = {{ ('This territory cannot be added separately' if en else 'Эту территорию нельзя добавить отдельно') | tojson }};
         content.appendChild(note);
       }
       actionPopup = new maplibregl.Popup({closeButton: false, offset: 12})

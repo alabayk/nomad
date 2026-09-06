@@ -68,6 +68,8 @@ def _form_response(
     values: dict[str, object] | None = None,
     status_code: int = 200,
 ) -> HTMLResponse:
+    if user.language == "en":
+        title = "Edit memory" if memory else "New memory"
     csrf_token = csrf_token_for_request(request)
     response = templates.TemplateResponse(
         request=request,
@@ -620,6 +622,7 @@ def visited_countries_page(
     user = current_user(db, request)
     if user is None:
         return _redirect_to_login()
+    en = user.language == "en"
     countries = list(
         db.scalars(
             select(VisitedCountry)
@@ -649,16 +652,16 @@ def visited_countries_page(
             "memory_country_codes": memory_country_codes,
             "available_countries": available_countries,
             "page_mode": "visited",
-            "page_title": "Посещённые страны",
-            "page_eyebrow": "Карта путешествий",
-            "page_description": "Страны из воспоминаний добавляются автоматически. Другие можно отметить вручную.",
+            "page_title": "Visited countries" if en else "Посещённые страны",
+            "page_eyebrow": "Travel map" if en else "Карта путешествий",
+            "page_description": ("Countries from memories are added automatically. You can mark others manually." if en else "Страны из воспоминаний добавляются автоматически. Другие можно отметить вручную."),
             "form_action": "/countries",
             "delete_prefix": "/countries",
             "country_items": [
                 {
                     "code": item.country_code,
                     "name": item.country_name,
-                    "source": "из воспоминаний" if item.country_code in memory_country_codes else "добавлено вручную",
+                    "source": (("from memories" if en else "из воспоминаний") if item.country_code in memory_country_codes else ("added manually" if en else "добавлено вручную")),
                     "deletable": item.country_code not in memory_country_codes,
                 }
                 for item in countries
@@ -724,6 +727,7 @@ def wishlist_countries_page(
     user = current_user(db, request)
     if user is None:
         return _redirect_to_login()
+    en = user.language == "en"
     countries = list(
         db.scalars(
             select(WishlistCountry)
@@ -746,16 +750,16 @@ def wishlist_countries_page(
             "memory_country_codes": set(),
             "available_countries": available_countries,
             "page_mode": "wishlist",
-            "page_title": "Хочу посетить",
-            "page_eyebrow": "Карта желаний",
-            "page_description": "Отмечайте страны для будущих путешествий. Этот список не зависит от воспоминаний.",
+            "page_title": "Want to visit" if en else "Хочу посетить",
+            "page_eyebrow": "Wishlist map" if en else "Карта желаний",
+            "page_description": ("Mark countries for future journeys. This list is independent of your memories." if en else "Отмечайте страны для будущих путешествий. Этот список не зависит от воспоминаний."),
             "form_action": "/wishlist",
             "delete_prefix": "/wishlist",
             "country_items": [
                 {
                     "code": item.country_code,
                     "name": item.country_name,
-                    "source": "в списке желаний",
+                    "source": "wishlist" if en else "в списке желаний",
                     "deletable": True,
                 }
                 for item in countries

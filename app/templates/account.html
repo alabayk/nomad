@@ -1,41 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Аккаунт — Nomad{% endblock %}
+{% block title %}{{ 'Account' if en else 'Аккаунт' }} — Nomad{% endblock %}
 {% block content %}
 <div class="account-page">
   <header class="account-header">
-    <div class="account-avatar-large">{% if user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="Фото профиля {{ user.full_name }}">{% else %}{{ user.initials }}{% endif %}</div>
-    <div><p class="eyebrow">Личный профиль</p><h1>{{ user.full_name }}</h1><p class="muted">@{{ user.username }}</p></div>
+    <div class="account-avatar-large">{% if user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="{{ 'Profile photo' if en else 'Фото профиля' }} {{ user.full_name }}">{% else %}{{ user.initials }}{% endif %}</div>
+    <div><p class="eyebrow">{{ 'Personal profile' if en else 'Личный профиль' }}</p><h1>{{ user.full_name }}</h1><p class="muted">@{{ user.username }}</p></div>
   </header>
   {% if notice %}<div class="account-notice" role="status">{{ notice }}</div>{% endif %}
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
   <div class="account-grid">
-    <section class="account-panel"><h2>Профиль</h2>
+    <section class="account-panel"><h2>{{ 'Profile' if en else 'Профиль' }}</h2>
       <form method="post" action="/account/profile" enctype="multipart/form-data" class="auth-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label>Имя<input name="full_name" value="{{ user.full_name }}" maxlength="100" required></label>
-        <label>Логин<input name="username" value="{{ user.username }}" minlength="3" maxlength="64" required></label>
-        <label>Новое фото <small>JPG, PNG, GIF или WebP до 5 МБ</small><input type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"></label>
-        {% if user.profile_photo_url %}<label class="check-line"><input type="checkbox" name="remove_photo" value="true"> Удалить текущее фото</label>{% endif %}
-        <button type="submit">Сохранить профиль</button>
+        <label>{{ 'Name' if en else 'Имя' }}<input name="full_name" value="{{ user.full_name }}" maxlength="100" required></label>
+        <label>{{ 'Username' if en else 'Логин' }}<input name="username" value="{{ user.username }}" minlength="3" maxlength="64" required></label>
+        <label>{{ 'New photo' if en else 'Новое фото' }} <small>{{ 'JPG, PNG, GIF or WebP up to 5 MB' if en else 'JPG, PNG, GIF или WebP до 5 МБ' }}</small><input type="file" name="profile_photo" accept="image/jpeg,image/png,image/gif,image/webp"></label>
+        {% if user.profile_photo_url %}<label class="check-line"><input type="checkbox" name="remove_photo" value="true"> {{ 'Remove current photo' if en else 'Удалить текущее фото' }}</label>{% endif %}
+        <button type="submit">{{ 'Save profile' if en else 'Сохранить профиль' }}</button>
       </form>
     </section>
-    <section class="account-panel"><h2>Пароль</h2>
+    <section class="account-panel"><h2>{{ 'Password' if en else 'Пароль' }}</h2>
       <form method="post" action="/account/password" class="auth-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <label>Текущий пароль<input type="password" name="current_password" autocomplete="current-password" required></label>
-        <label>Новый пароль<input type="password" name="new_password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
-        <label>Повторите новый пароль<input type="password" name="new_password_confirm" minlength="8" maxlength="128" autocomplete="new-password" required></label>
-        <button type="submit">Изменить пароль</button>
+        <label>{{ 'Current password' if en else 'Текущий пароль' }}<input type="password" name="current_password" autocomplete="current-password" required></label>
+        <label>{{ 'New password' if en else 'Новый пароль' }}<input type="password" name="new_password" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+        <label>{{ 'Repeat new password' if en else 'Повторите новый пароль' }}<input type="password" name="new_password_confirm" minlength="8" maxlength="128" autocomplete="new-password" required></label>
+        <button type="submit">{{ 'Change password' if en else 'Изменить пароль' }}</button>
       </form>
     </section>
   </div>
   <section class="account-danger">
-    <div><h2>Управление аккаунтом</h2><p>Можно выйти или навсегда удалить аккаунт вместе со всеми воспоминаниями.</p></div>
+    <div><h2>{{ 'Account management' if en else 'Управление аккаунтом' }}</h2><p>{{ 'Sign out or permanently delete the account and every memory.' if en else 'Можно выйти или навсегда удалить аккаунт вместе со всеми воспоминаниями.' }}</p></div>
     <div class="account-danger-actions">
-      <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary" type="submit">Выйти</button></form>
-      <form method="post" action="/account/delete" onsubmit="return confirm('Удалить аккаунт и все его данные без возможности восстановления?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger" type="submit">Удалить аккаунт</button></form>
+      <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary" type="submit">{{ 'Sign out' if en else 'Выйти' }}</button></form>
+      <form method="post" action="/account/delete" onsubmit="return confirm({{ ('Delete the account and all its data permanently?' if en else 'Удалить аккаунт и все его данные без возможности восстановления?') | tojson }})"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger" type="submit">{{ 'Delete account' if en else 'Удалить аккаунт' }}</button></form>
     </div>
   </section>
-  <p class="account-created">Аккаунт зарегистрирован {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+  <p class="account-created">{{ 'Account registered on' if en else 'Аккаунт зарегистрирован' }} {{ user.created_at.strftime('%d.%m.%Y') }}</p>
 </div>
 {% endblock %}

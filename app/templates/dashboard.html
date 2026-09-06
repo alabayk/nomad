@@ -1,44 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Мои воспоминания — Nomad{% endblock %}
+{% block title %}{{ 'My memories' if en else 'Мои воспоминания' }} — Nomad{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">
 {% endblock %}
 {% block content %}
 <div class="dashboard-shell">
   <nav class="map-tabs" aria-label="Разделы карты">
-    <a class="active" href="/dashboard">Места</a>
-    <a href="/countries">Посещённые страны</a>
-    <a href="/wishlist">Хочу посетить</a>
+    <a class="active" href="/dashboard">{{ 'Places' if en else 'Места' }}</a>
+    <a href="/countries">{{ 'Visited countries' if en else 'Посещённые страны' }}</a>
+    <a href="/wishlist">{{ 'Want to visit' if en else 'Хочу посетить' }}</a>
   </nav>
   <header class="dashboard-header">
     <div>
-      <p class="eyebrow">Личная карта {{ user.username }}</p>
-      <h1>Мои воспоминания</h1>
+      <p class="eyebrow">{{ 'Personal map' if en else 'Личная карта' }} {{ user.username }}</p>
+      <h1>{{ 'My memories' if en else 'Мои воспоминания' }}</h1>
     </div>
     <div class="header-actions">
-      <a class="button-link" href="/memories/new">+ Добавить место</a>
+      <a class="button-link" href="/memories/new">+ {{ 'Add place' if en else 'Добавить место' }}</a>
       <form method="post" action="/logout">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="secondary" type="submit">Выйти</button>
+        <button class="secondary" type="submit">{{ 'Sign out' if en else 'Выйти' }}</button>
       </form>
     </div>
   </header>
 
   <form class="filters" id="memory-filters" method="get" action="/dashboard">
-    <label>Год
+    <label>{{ 'Year' if en else 'Год' }}
       <select name="year" id="filter-year">
-        <option value="">Все годы</option>
+        <option value="">{{ 'All years' if en else 'Все годы' }}</option>
         {% for year in years %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}
       </select>
     </label>
-    <label>Страна
+    <label>{{ 'Country' if en else 'Страна' }}
       <select name="country" id="filter-country">
-        <option value="">Все страны</option>
+        <option value="">{{ 'All countries' if en else 'Все страны' }}</option>
         {% for code, name in countries %}<option value="{{ code }}" {% if selected_country|upper == code %}selected{% endif %}>{{ name or code }}</option>{% endfor %}
       </select>
     </label>
-    <button type="submit">Показать</button>
-    {% if selected_year or selected_country %}<a href="/dashboard">Сбросить</a>{% endif %}
+    <button type="submit">{{ 'Show' if en else 'Показать' }}</button>
+    {% if selected_year or selected_country %}<a href="/dashboard">{{ 'Reset' if en else 'Сбросить' }}</a>{% endif %}
   </form>
 
   <section class="map-panel">
@@ -46,7 +46,7 @@
   </section>
 
   <section class="memory-list-section">
-    <div class="section-heading"><h2>Места</h2><span>{{ memories|length }}</span></div>
+    <div class="section-heading"><h2>{{ 'Places' if en else 'Места' }}</h2><span>{{ memories|length }}</span></div>
     <div class="memory-grid">
       {% for memory in memories %}
       <a class="memory-polaroid" href="/memories/{{ memory.id }}" aria-label="Открыть воспоминание: {{ memory.place_name }}">
@@ -86,7 +86,7 @@
     replaceOptions(
       countryFilter,
       [...countries].sort((a, b) => a[1].localeCompare(b[1], 'ru')).map(([value, label]) => ({value, label})),
-      'Все страны',
+      {{ ('All countries' if en else 'Все страны') | tojson }},
       previousCountry
     );
   });
@@ -99,7 +99,7 @@
       .map(item => item.year))]
       .sort((a, b) => b - a)
       .map(value => ({value: String(value), label: String(value)}));
-    replaceOptions(yearFilter, years, 'Все годы', previousYear);
+    replaceOptions(yearFilter, years, {{ ('All years' if en else 'Все годы') | tojson }}, previousYear);
   });
 
   filterForm.addEventListener('submit', () => {
@@ -124,8 +124,8 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'map-reset-button';
-      button.title = 'Показать все места';
-      button.setAttribute('aria-label', 'Показать все места');
+      button.title = {{ ('Show all places' if en else 'Показать все места') | tojson }};
+      button.setAttribute('aria-label', button.title);
       button.textContent = '⌂';
       button.addEventListener('click', () => resetMapView());
       this.container.appendChild(button);
@@ -153,7 +153,7 @@
     popup.appendChild(date);
     const link = document.createElement('a');
     link.href = `/memories/${memory.id}`;
-    link.textContent = 'Открыть';
+    link.textContent = {{ ('Open' if en else 'Открыть') | tojson }};
     popup.appendChild(link);
     const markerPopup = new maplibregl.Popup({offset: 24}).setDOMContent(popup);
     new maplibregl.Marker({color: '#a45d32'})

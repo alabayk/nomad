@@ -7,7 +7,7 @@
 <section class="form-card wide-card">
   <div class="form-heading">
     <div><p class="eyebrow">Nomad</p><h1>{{ title }}</h1></div>
-    <a href="{% if memory %}/memories/{{ memory.id }}{% else %}/dashboard{% endif %}">Отмена</a>
+    <a href="{% if memory %}/memories/{{ memory.id }}{% else %}/dashboard{% endif %}">{{ 'Cancel' if en else 'Отмена' }}</a>
   </div>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
   <form method="post" action="{{ action }}" enctype="multipart/form-data" class="memory-form">
@@ -18,45 +18,45 @@
     <input type="hidden" name="country_name" id="selected-country-name" value="{{ values.get('country_name', (memory.country_name or '') if memory else '') }}">
     <input type="hidden" name="resolved_location_name" id="resolved-location-name" value="{{ values.get('resolved_location_name', (memory.location_name or memory.place_name) if memory else '') }}">
     <div class="form-row">
-      <label>Название воспоминания
-        <input name="place_name" maxlength="200" value="{{ values.get('place_name', memory.place_name if memory else '') }}" placeholder="Например, Наш медовый месяц" required autofocus>
-        <small>Эта подпись отображается на полароиде и в воспоминании.</small>
+      <label>{{ 'Memory title' if en else 'Название воспоминания' }}
+        <input name="place_name" maxlength="200" value="{{ values.get('place_name', memory.place_name if memory else '') }}" placeholder="{{ 'For example, Our honeymoon' if en else 'Например, Наш медовый месяц' }}" required autofocus>
+        <small>{{ 'This caption appears on the Polaroid and memory page.' if en else 'Эта подпись отображается на полароиде и в воспоминании.' }}</small>
       </label>
-      <label>Месяц посещения
+      <label>{{ 'Month visited' if en else 'Месяц посещения' }}
         <input type="month" name="visit_date" value="{{ values.get('visit_date', memory.visit_date.strftime('%Y-%m') if memory else '') }}" required>
-        <small>Точный день указывать не нужно.</small>
+        <small>{{ 'You do not need to specify the exact day.' if en else 'Точный день указывать не нужно.' }}</small>
       </label>
     </div>
     <section class="location-picker">
       <div class="location-search-row">
-        <label>Локация
+        <label>{{ 'Location' if en else 'Локация' }}
           <input id="location-name" name="location_name" maxlength="250" value="{{ values.get('location_name', (memory.location_name or memory.place_name) if memory else '') }}" placeholder="Например, Club Med Kani, Maldives" required>
-          <small>Это поле используется только для поиска точки на карте.</small>
+          <small>{{ 'This field is only used to find the point on the map.' if en else 'Это поле используется только для поиска точки на карте.' }}</small>
         </label>
-        <button id="find-location" type="button">Найти на карте</button>
+        <button id="find-location" type="button">{{ 'Find on map' if en else 'Найти на карте' }}</button>
       </div>
-      <p id="location-status" class="location-status" aria-live="polite">Проверьте маркер. Если место найдено неверно, поставьте его кликом по карте.</p>
-      <div id="location-picker-map" aria-label="Выбор локации на карте"></div>
-      <small>Кликните в нужной точке карты — выбранные вручную координаты заменят результат поиска.</small>
+      <p id="location-status" class="location-status" aria-live="polite">{{ 'Check the marker. If it is wrong, click the correct point on the map.' if en else 'Проверьте маркер. Если место найдено неверно, поставьте его кликом по карте.' }}</p>
+      <div id="location-picker-map" aria-label="{{ 'Choose location on map' if en else 'Выбор локации на карте' }}"></div>
+      <small>{{ 'Click the correct point; manual coordinates will replace the search result.' if en else 'Кликните в нужной точке карты — выбранные вручную координаты заменят результат поиска.' }}</small>
     </section>
-    <label>Воспоминание
-      <textarea name="description" maxlength="5000" rows="7" placeholder="Что особенно запомнилось?">{{ values.get('description', memory.description if memory else '') }}</textarea>
+    <label>{{ 'Memory' if en else 'Воспоминание' }}
+      <textarea name="description" maxlength="5000" rows="7" placeholder="{{ 'What do you remember most?' if en else 'Что особенно запомнилось?' }}">{{ values.get('description', memory.description if memory else '') }}</textarea>
     </label>
-    <label>Ссылки на фотографии
-      <textarea name="photo_urls" rows="3" placeholder="Одна ссылка http:// или https:// на строку">{{ values.get('photo_urls', external_urls) }}</textarea>
+    <label>{{ 'Photo links' if en else 'Ссылки на фотографии' }}
+      <textarea name="photo_urls" rows="3" placeholder="{{ 'One http:// or https:// link per line' if en else 'Одна ссылка http:// или https:// на строку' }}">{{ values.get('photo_urls', external_urls) }}</textarea>
     </label>
-    <label>Загрузить фотографии
+    <label>{{ 'Upload photos' if en else 'Загрузить фотографии' }}
       <input type="file" name="photos" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
-      <small>JPG, PNG, GIF или WebP; до 5 МБ каждое, максимум 10 фото вместе со ссылками.</small>
+      <small>{{ 'JPG, PNG, GIF or WebP; up to 5 MB each and 10 photos total.' if en else 'JPG, PNG, GIF или WebP; до 5 МБ каждое, максимум 10 фото вместе со ссылками.' }}</small>
     </label>
     {% if local_urls %}
-    <fieldset class="existing-photos"><legend>Загруженные фотографии</legend>
+    <fieldset class="existing-photos"><legend>{{ 'Uploaded photos' if en else 'Загруженные фотографии' }}</legend>
       {% for url in local_urls %}
-      <label class="existing-photo"><img src="{{ url }}" alt=""><span><input type="checkbox" name="remove_photo" value="{{ url }}"> Удалить</span></label>
+      <label class="existing-photo"><img src="{{ url }}" alt=""><span><input type="checkbox" name="remove_photo" value="{{ url }}"> {{ 'Delete' if en else 'Удалить' }}</span></label>
       {% endfor %}
     </fieldset>
     {% endif %}
-    <button type="submit">{% if memory %}Сохранить изменения{% else %}Добавить воспоминание{% endif %}</button>
+    <button type="submit">{% if memory %}{{ 'Save changes' if en else 'Сохранить изменения' }}{% else %}{{ 'Add memory' if en else 'Добавить воспоминание' }}{% endif %}</button>
   </form>
 </section>
 {% endblock %}
