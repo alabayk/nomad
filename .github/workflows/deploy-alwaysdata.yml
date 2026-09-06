@@ -27,7 +27,7 @@ jobs:
       - name: Update application
         run: |
           ssh nomad@ssh-nomad.alwaysdata.net \
-            'cd /home/nomad/www/nomad && git pull --ff-only origin main && .venv/bin/pip install --quiet -r requirements.txt'
+            'cd /home/nomad/www/nomad && git pull --ff-only origin main && .venv/bin/pip install --quiet -r requirements.txt && touch app/main.py'
 
       - name: Verify production
         run: |
