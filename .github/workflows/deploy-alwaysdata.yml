@@ -29,15 +29,6 @@ jobs:
           ssh nomad@ssh-nomad.alwaysdata.net \
             'cd /home/nomad/www/nomad && git pull --ff-only origin main && .venv/bin/pip install --quiet -r requirements.txt'
 
-      - name: Restart website
-        env:
-          ALWAYSDATA_API_KEY: ${{ secrets.ALWAYSDATA_API_KEY }}
-        run: |
-          curl --fail --silent --show-error \
-            --user "$ALWAYSDATA_API_KEY account=nomad:" \
-            --request POST \
-            https://api.alwaysdata.com/v1/site/1074040/restart/
-
       - name: Verify production
         run: |
           for attempt in {1..12}; do

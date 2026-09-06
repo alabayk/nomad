@@ -52,8 +52,9 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ## Автоматическое обновление alwaysdata
 
 Workflow `.github/workflows/deploy-alwaysdata.yml` обновляет приложение после
-каждого push в `main`, перезапускает сайт через API alwaysdata и проверяет
-`/health`. Для включения добавьте в GitHub Actions secrets
-`ALWAYSDATA_SSH_KEY`, `ALWAYSDATA_API_KEY`, а затем repository variable
+каждого push в `main` и проверяет `/health`. Uvicorn на alwaysdata запускается
+с `--reload`, поэтому изменение файлов автоматически перезапускает приложение.
+Для включения добавьте в GitHub Actions secret
+`ALWAYSDATA_SSH_KEY`, а затем repository variable
 `AUTODEPLOY_ENABLED=true`. Пока переменная отсутствует, workflow безопасно
 пропускает развёртывание.
