@@ -1,6 +1,6 @@
-{% set en = user and user.language == 'en' %}
+{% set en = (user and user.language == 'en') or (not user and request.cookies.get('nomad_language') == 'en') %}
 <!doctype html>
-<html lang="{{ user.language if user and user.language else 'ru' }}" data-theme="{{ user.theme if user and user.theme else 'dark' }}">
+<html lang="{{ 'en' if en else 'ru' }}" data-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-  <link rel="stylesheet" href="/static/css/app.css?v=stage1auth">
+  <link rel="stylesheet" href="/static/css/app.css?v=stage2settings">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -34,7 +34,7 @@
         <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
         {% endif %}
-        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, theme and maps' if en else 'Язык, тема и карты' }}</small></a>
+        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, data management' if en else 'Язык, управление данными' }}</small></a>
       </nav>
       <a class="menu-account" href="/account">
         <span class="menu-avatar" aria-hidden="true">{% if user and user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="">{% elif user %}{{ user.initials }}{% else %}<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.6-5 3.2-7 8-7s7.4 2 8 7"/></svg>{% endif %}</span>

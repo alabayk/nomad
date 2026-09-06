@@ -214,8 +214,8 @@ def test_user_preferences_are_saved_and_applied(test_session_factory) -> None:
         )
         assert saved.status_code == 303
         updated_page = client.get("/settings")
-        assert '<html lang="en" data-theme="light">' in updated_page.text
-        assert "Appearance" in updated_page.text
+        assert '<html lang="en" data-theme="dark">' in updated_page.text
+        assert "Language" in updated_page.text
         assert "My memories" in client.get("/dashboard").text
         assert "Account management" in client.get("/account").text
         assert "Visited countries" in client.get("/countries").text
@@ -223,4 +223,18 @@ def test_user_preferences_are_saved_and_applied(test_session_factory) -> None:
     with test_session_factory() as db:
         user = db.scalar(select(User).where(User.username == "settings_user"))
         assert user is not None
-        assert (user.language, user.theme) == ("en", "light")
+        assert user.language == "en"
+
+
+def test_guest_can_open_settings_and_change_language() -> None:
+    with TestClient(app) as client:
+        page = client.get("/settings")
+        assert page.status_code == 200
+        assert "Войдите, чтобы управлять данными" in page.text
+        saved = client.post(
+            "/settings/preferences",
+            data={"language": "en", "csrf_token": csrf_from(page)},
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        assert '<html lang="en" data-theme="dark">' in client.get("/settings").text

@@ -201,14 +201,13 @@ def delete_account(
     return response
 
 
-def settings_response(
-    request: Request, user: User, *, notice: str = "", error: str = ""
-) -> HTMLResponse:
+def settings_response(request: Request, user: User | None, *, error: str = "") -> HTMLResponse:
     csrf_token = csrf_token_for_request(request)
+    language = user.language if user else request.cookies.get("nomad_language", "ru")
     response = templates.TemplateResponse(
         request=request,
         name="settings.html",
-        context={"user": user, "csrf_token": csrf_token, "notice": notice, "error": error},
+        context={"user": user, "language": language, "csrf_token": csrf_token, "error": error},
     )
     set_csrf_cookie(response, csrf_token)
     return response
@@ -217,29 +216,26 @@ def settings_response(
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
     user = current_user(db, request)
-    if user is None:
-        return RedirectResponse("/login", status_code=303)
-    notices = {"preferences": "Настройки сохранены.", "visits": "Данные о посещениях удалены.", "wishlist": "Список желаний очищен.", "all": "Данные о путешествиях удалены."}
-    return settings_response(request, user, notice=notices.get(request.query_params.get("saved", ""), ""))
+    return settings_response(request, user)
 
 
 @app.post("/settings/preferences")
 def update_preferences(
     request: Request,
     language: str = Form(...),
-    theme: str = Form(...),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     user = current_user(db, request)
-    if user is None:
-        return RedirectResponse("/login", status_code=303)
-    if not valid_csrf_token(request, csrf_token) or language not in {"ru", "en"} or theme not in {"dark", "light"}:
+    if not valid_csrf_token(request, csrf_token) or language not in {"ru", "en"}:
         return settings_response(request, user, error="Не удалось сохранить настройки.")
-    user.language = language
-    user.theme = theme
-    db.commit()
-    return RedirectResponse("/settings?saved=preferences", status_code=303)
+    response = RedirectResponse("/settings", status_code=303)
+    if user:
+        user.language = language
+        db.commit()
+    else:
+        response.set_cookie("nomad_language", language, max_age=31536000, samesite="lax", path="/")
+    return response
 
 
 @app.post("/settings/delete-data")
