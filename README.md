@@ -48,3 +48,12 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 Основные переменные окружения перечислены в `.env.example`. Файлы `.env`, базы
 данных и каталог загрузок исключены из Git.
+
+## Автоматическое обновление alwaysdata
+
+Workflow `.github/workflows/deploy-alwaysdata.yml` обновляет приложение после
+каждого push в `main`, перезапускает сайт через API alwaysdata и проверяет
+`/health`. Для включения добавьте в GitHub Actions secrets
+`ALWAYSDATA_SSH_KEY`, `ALWAYSDATA_API_KEY`, а затем repository variable
+`AUTODEPLOY_ENABLED=true`. Пока переменная отсутствует, workflow безопасно
+пропускает развёртывание.

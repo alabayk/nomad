@@ -1,0 +1,49 @@
+name: Deploy to alwaysdata
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: nomad-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.AUTODEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Prepare SSH access
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ssh-nomad.alwaysdata.net >> ~/.ssh/known_hosts
+
+      - name: Update application
+        run: |
+          ssh nomad@ssh-nomad.alwaysdata.net \
+            'cd /home/nomad/www/nomad && git pull --ff-only origin main && .venv/bin/pip install --quiet -r requirements.txt'
+
+      - name: Restart website
+        env:
+          ALWAYSDATA_API_KEY: ${{ secrets.ALWAYSDATA_API_KEY }}
+        run: |
+          curl --fail --silent --show-error \
+            --user "$ALWAYSDATA_API_KEY account=nomad:" \
+            --request POST \
+            https://api.alwaysdata.com/v1/site/1074040/restart/
+
+      - name: Verify production
+        run: |
+          for attempt in {1..12}; do
+            if curl --fail --silent https://nomad.alwaysdata.net/health | grep -q '"status":"ok"'; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
