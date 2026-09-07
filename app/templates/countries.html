@@ -69,13 +69,13 @@
   const actionQuestion = {{ (('Add “{name}” to your wishlist?' if page_mode == 'wishlist' else 'Add “{name}” to visited countries?') if en else ('Добавить страну «{name}» в список желаний?' if page_mode == 'wishlist' else 'Добавить страну «{name}» в посещённые?')) | tojson }};
   const alreadyLabel = {{ ('Already' if en else 'Уже') | tojson }};
   const addLabel = {{ ('Add' if en else 'Добавить') | tojson }};
-  const selectedColor = {{ ('#6e91a7' if page_mode == 'wishlist' else '#d77849') | tojson }};
-  const selectedOutline = {{ ('#405f73' if page_mode == 'wishlist' else '#8b432a') | tojson }};
+  const selectedColor = {{ ('#f09a67' if page_mode == 'wishlist' else '#df714e') | tojson }};
+  const selectedOutline = {{ ('#ffd0a8' if page_mode == 'wishlist' else '#ffb091') | tojson }};
   let countriesData;
   let initialCountryView;
   const map = new maplibregl.Map({
     container: 'countries-map',
-    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#dce7e1'}}]},
+    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#061817'}}]},
     center: [0, 15],
     zoom: 0,
     minZoom: 0,
@@ -146,17 +146,34 @@
     map.addSource('countries', {type: 'geojson', data: countriesData});
     map.addLayer({
       id: 'country-base', type: 'fill', source: 'countries',
-      paint: {'fill-color': '#f8f6ef', 'fill-opacity': 1, 'fill-outline-color': '#a6b6ae'}
+      paint: {'fill-color': '#12312e', 'fill-opacity': 1, 'fill-outline-color': '#3e5b55'}
+    });
+    map.addLayer({
+      id: 'country-borders', type: 'line', source: 'countries',
+      paint: {
+        'line-color': '#527068',
+        'line-opacity': .72,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 0, .45, 3, .8, 6, 1.25]
+      }
     });
     map.addLayer({
       id: 'visited-countries', type: 'fill', source: 'countries',
       filter: ['in', ['get', 'ISO_A2_EH'], ['literal', visitedCodes]],
-      paint: {'fill-color': selectedColor, 'fill-opacity': .82, 'fill-outline-color': selectedOutline}
+      paint: {'fill-color': selectedColor, 'fill-opacity': .9, 'fill-outline-color': selectedOutline}
+    });
+    map.addLayer({
+      id: 'selected-country-borders', type: 'line', source: 'countries',
+      filter: ['in', ['get', 'ISO_A2_EH'], ['literal', visitedCodes]],
+      paint: {
+        'line-color': selectedOutline,
+        'line-opacity': .92,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 0, .75, 3, 1.25, 6, 1.8]
+      }
     });
     map.addLayer({
       id: 'country-hover', type: 'fill', source: 'countries',
       filter: ['==', ['get', 'ISO_A2_EH'], ''],
-      paint: {'fill-color': '#efb184', 'fill-opacity': .62, 'fill-outline-color': '#7c4934'}
+      paint: {'fill-color': '#ffc08f', 'fill-opacity': .48, 'fill-outline-color': '#ffd2ae'}
     });
     map.addLayer({
       id: 'visited-tiny-countries', type: 'symbol', source: 'countries',
@@ -174,7 +191,7 @@
       paint: {
         'text-color': selectedColor,
         'text-halo-color': selectedOutline,
-        'text-halo-width': 1
+        'text-halo-width': 2
       }
     });
     let actionPopup;

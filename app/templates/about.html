@@ -101,15 +101,17 @@
 
   const countriesDemo = new maplibregl.Map({
     container: 'about-countries-map',
-    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#dce7e1'}}]},
+    style: {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#061817'}}]},
     center: [18, 24], zoom: .25, interactive: false, attributionControl: false
   });
   countriesDemo.on('load', async () => {
     const response = await fetch('/static/data/countries.geojson');
     const data = await response.json();
     countriesDemo.addSource('demo-countries', {type: 'geojson', data});
-    countriesDemo.addLayer({id: 'demo-country-base', type: 'fill', source: 'demo-countries', paint: {'fill-color': '#f7f4ec', 'fill-outline-color': '#a7b5ad'}});
-    countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV','RU','CN','DE','EG']]], paint: {'fill-color': '#d77849', 'fill-opacity': .86, 'fill-outline-color': '#8b432a'}});
+    countriesDemo.addLayer({id: 'demo-country-base', type: 'fill', source: 'demo-countries', paint: {'fill-color': '#12312e', 'fill-outline-color': '#3e5b55'}});
+    countriesDemo.addLayer({id: 'demo-country-borders', type: 'line', source: 'demo-countries', paint: {'line-color': '#58736b', 'line-opacity': .72, 'line-width': .55}});
+    countriesDemo.addLayer({id: 'demo-country-selected', type: 'fill', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV','RU','CN','DE','EG']]], paint: {'fill-color': '#df714e', 'fill-opacity': .92, 'fill-outline-color': '#ffb091'}});
+    countriesDemo.addLayer({id: 'demo-selected-borders', type: 'line', source: 'demo-countries', filter: ['in', ['get', 'ISO_A2_EH'], ['literal', ['FR','TR','JP','MV','RU','CN','DE','EG']]], paint: {'line-color': '#ffb091', 'line-opacity': .9, 'line-width': 1}});
     countriesDemo.fitBounds([[-25, -15], [150, 72]], {padding: 10, duration: 0});
   });
 
