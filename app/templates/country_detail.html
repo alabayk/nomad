@@ -51,6 +51,9 @@
 <script src="/static/vendor/maplibre/maplibre-gl.js"></script>
 <script>
   const countryCode={{ country.country_code|tojson }},memoryPoints={{ map_memories|tojson }};
+  const noteField=document.querySelector('.country-note-panel textarea');
+  const fitNote=()=>{noteField.style.height='auto';noteField.style.height=`${Math.max(190,noteField.scrollHeight)}px`};
+  noteField.addEventListener('input',fitNote);fitNote();
   const countryMap=new maplibregl.Map({container:'country-detail-map',style:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#061817'}}]},center:[0,20],zoom:1,attributionControl:false});
   countryMap.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
   function collectCountryCoordinates(value,points){if(typeof value[0]==='number'){points.push(value);return}value.forEach(part=>collectCountryCoordinates(part,points))}
