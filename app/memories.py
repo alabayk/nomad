@@ -454,7 +454,8 @@ def travel_timeline(
             "memory": item,
             "first_country_visit": item.id in first_country_memory_ids,
         })
-    return templates.TemplateResponse(
+    csrf_token = csrf_token_for_request(request)
+    response = templates.TemplateResponse(
         request=request,
         name="timeline.html",
         context={
@@ -471,8 +472,43 @@ def travel_timeline(
                 {"year": item.visit_date.year, "code": item.country_code, "name": item.country_name or item.country_code}
                 for item in all_memories if item.country_code
             ],
+            "csrf_token": csrf_token,
         },
     )
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+@router.get("/favorites", response_class=HTMLResponse)
+def favorite_memories(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    memories = list(db.scalars(select(Memory).where(
+        Memory.user_id == user.id, Memory.is_favorite.is_(True)
+    ).order_by(Memory.visit_date.desc(), Memory.id.desc())))
+    csrf_token = csrf_token_for_request(request)
+    response = templates.TemplateResponse(request=request, name="favorites.html", context={
+        "user": user, "memories": memories, "csrf_token": csrf_token,
+    })
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+@router.post("/memories/{memory_id}/favorite")
+def toggle_memory_favorite(
+    memory_id: int, request: Request, csrf_token: str = Form(...), next: str = Form(""),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    memory = _memory_for_user(db, memory_id, user.id)
+    if memory is not None and valid_csrf_token(request, csrf_token):
+        memory.is_favorite = not memory.is_favorite
+        db.commit()
+    allowed_next = {"/timeline", "/favorites", f"/memories/{memory_id}"}
+    return RedirectResponse(next if next in allowed_next else f"/memories/{memory_id}", status_code=303)
 
 
 @router.get("/memories/new", response_class=HTMLResponse)

@@ -36,6 +36,23 @@ def test_private_memory_share_can_be_created_viewed_and_revoked(test_session_fac
         assert TestClient(app).get(f"/shared/{token}").status_code == 404
 
 
+def test_memory_can_be_added_to_and_removed_from_favorites(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "favorite_owner")
+        with test_session_factory() as db:
+            user = db.scalar(select(User).where(User.username == "favorite_owner"))
+            memory = Memory(user_id=user.id, place_name="Особенный день", location_name="Рим", latitude=41.9, longitude=12.5, visit_date=date(2026, 5, 1))
+            db.add(memory); db.commit(); db.refresh(memory); memory_id = memory.id
+        detail = client.get(f"/memories/{memory_id}")
+        added = client.post(f"/memories/{memory_id}/favorite", data={"csrf_token": csrf_from(detail), "next": "/favorites"}, follow_redirects=False)
+        assert added.status_code == 303 and added.headers["location"] == "/favorites"
+        favorites = client.get("/favorites")
+        assert "Особенный день" in favorites.text
+        removed = client.post(f"/memories/{memory_id}/favorite", data={"csrf_token": csrf_from(favorites), "next": "/favorites"}, follow_redirects=False)
+        assert removed.status_code == 303
+        assert "Особенный день" not in client.get("/favorites").text
+
+
 def csrf_from(response) -> str:
     match = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
     assert match

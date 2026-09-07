@@ -133,6 +133,14 @@ def create_database_schema() -> None:
                     connection.execute(text(f"ALTER TABLE users ADD COLUMN {column} BOOLEAN DEFAULT TRUE"))
                 connection.execute(text(f"UPDATE users SET {column} = TRUE WHERE {column} IS NULL"))
             connection.execute(text("INSERT INTO schema_migrations (version) VALUES (:version)"), {"version": migration})
+        memory_columns = {column["name"] for column in inspect(connection).get_columns("memories")}
+        migration = "008_memory_favorites"
+        if migration not in applied:
+            if "is_favorite" not in memory_columns:
+                connection.execute(text("ALTER TABLE memories ADD COLUMN is_favorite BOOLEAN DEFAULT FALSE"))
+            connection.execute(text("UPDATE memories SET is_favorite = FALSE WHERE is_favorite IS NULL"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_memories_is_favorite ON memories (is_favorite)"))
+            connection.execute(text("INSERT INTO schema_migrations (version) VALUES (:version)"), {"version": migration})
 
 
 def get_db() -> Generator[Session, None, None]:

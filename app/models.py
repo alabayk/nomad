@@ -129,6 +129,7 @@ class Memory(Base):
     visit_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
     photo_urls: Mapped[list[str]] = mapped_column(JSON, default=list)
+    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     country_code: Mapped[str | None] = mapped_column(String(2), nullable=True)
     country_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

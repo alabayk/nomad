@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Favorites' if en else 'Избранное' }} — Nomad{% endblock %}
+{% block content %}
+<article class="favorites-page">
+  <header class="favorites-hero"><div><p class="eyebrow">{{ 'PERSONAL COLLECTION' if en else 'ЛИЧНАЯ КОЛЛЕКЦИЯ' }}</p><h1>{{ 'Favorites' if en else 'Избранное' }}</h1><p>{{ 'The moments you want to return to.' if en else 'Моменты, к которым хочется возвращаться.' }}</p></div><span><strong>{{ memories|length }}</strong>{{ 'selected' if en else 'сохранено' }}</span></header>
+  <section class="favorite-grid">
+  {% for memory in memories %}<article class="favorite-card">
+    <a class="favorite-image" href="/memories/{{ memory.id }}">{% if memory.photo_urls %}<img src="{{ memory.photo_urls[0] }}" alt="{{ memory.place_name }}" loading="lazy">{% else %}<img src="/static/img/no-photo.svg" alt="">{% endif %}</a>
+    <div><p class="eyebrow">{{ memory.country_name or ('MEMORY' if en else 'ВОСПОМИНАНИЕ') }}</p><h2><a href="/memories/{{ memory.id }}">{{ memory.place_name }}</a></h2><time>{{ memory.visit_date.strftime('%m.%Y') }}</time>{% if memory.description %}<p>{{ memory.description|truncate(150,true,'…') }}</p>{% endif %}
+    <form method="post" action="/memories/{{ memory.id }}/favorite"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="next" value="/favorites"><button class="favorite-remove" type="submit">{{ 'Remove' if en else 'Убрать из избранного' }}</button></form></div>
+  </article>{% else %}<div class="favorites-empty"><span>★</span><p class="eyebrow">{{ 'YOUR COLLECTION' if en else 'ВАША КОЛЛЕКЦИЯ' }}</p><h2>{{ 'No favorite memories yet' if en else 'Здесь пока нет избранных воспоминаний' }}</h2><p>{{ 'Mark meaningful moments with a star — they will gather here.' if en else 'Отмечайте особенные моменты звездой — они соберутся здесь.' }}</p><a class="button-link" href="/timeline">{{ 'Open timeline' if en else 'Открыть ленту' }}</a></div>{% endfor %}
+  </section>
+</article>
+{% endblock %}

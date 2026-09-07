@@ -2,7 +2,7 @@
 {% block title %}{{ memory.place_name }} — Nomad{% endblock %}
 {% block content %}
 <article class="detail-card">
-  <nav class="detail-nav"><a href="{{ back_url }}">← {{ back_label }}</a><a href="/memories/{{ memory.id }}/edit">{{ 'Edit' if en else 'Редактировать' }}</a></nav>
+  <nav class="detail-nav"><a href="{{ back_url }}">← {{ back_label }}</a><span class="detail-nav-actions"><form method="post" action="/memories/{{ memory.id }}/favorite"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="next" value="/memories/{{ memory.id }}"><button class="favorite-toggle{% if memory.is_favorite %} active{% endif %}" type="submit"><span>★</span>{{ 'In favorites' if memory.is_favorite and en else 'В избранном' if memory.is_favorite else 'Add to favorites' if en else 'В избранное' }}</button></form><a href="/memories/{{ memory.id }}/edit">{{ 'Edit' if en else 'Редактировать' }}</a></span></nav>
   <p class="eyebrow">{{ memory.country_name or ('Memory' if en else 'Воспоминание') }}</p>
   <h1>{{ memory.place_name }}</h1>
   <time datetime="{{ memory.visit_date.strftime('%Y-%m') }}">{{ memory.visit_date.strftime('%m.%Y') }}</time>

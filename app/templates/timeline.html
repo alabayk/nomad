@@ -29,6 +29,7 @@
           </a>
           <div class="timeline-card-copy">
             <div class="timeline-card-meta"><span>{{ memory.country_name or ('Memory' if en else 'Воспоминание') }}</span>{% if entry.first_country_visit %}<em>{{ 'First visit' if en else 'Первая поездка' }}</em>{% endif %}</div>
+            <form class="timeline-favorite" method="post" action="/memories/{{ memory.id }}/favorite"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="next" value="/timeline"><button class="favorite-toggle{% if memory.is_favorite %} active{% endif %}" type="submit" aria-label="{{ 'Remove from favorites' if memory.is_favorite and en else 'Убрать из избранного' if memory.is_favorite else 'Add to favorites' if en else 'Добавить в избранное' }}">★</button></form>
             <h3><a href="/memories/{{ memory.id }}?from=timeline">{{ memory.place_name }}</a></h3>
             <p class="timeline-location">{{ memory.location_name or memory.place_name }}</p>
             {% if memory.description %}<p class="timeline-excerpt">{{ memory.description|truncate(220, true, '…') }}</p>{% endif %}
