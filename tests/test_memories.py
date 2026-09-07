@@ -53,6 +53,24 @@ def test_memory_can_be_added_to_and_removed_from_favorites(test_session_factory)
         assert "Особенный день" not in client.get("/favorites").text
 
 
+def test_statistics_are_user_scoped_and_include_travel_totals(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "stats_owner")
+        with test_session_factory() as db:
+            user_id = db.scalar(select(User.id).where(User.username == "stats_owner"))
+            db.add_all([
+                Memory(user_id=user_id, place_name="Рим", location_name="Рим", latitude=41.9, longitude=12.5, visit_date=date(2025, 5, 1), country_code="IT", country_name="Италия", photo_urls=["/one.jpg"], is_favorite=True),
+                Memory(user_id=user_id, place_name="Милан", location_name="Милан", latitude=45.4, longitude=9.1, visit_date=date(2026, 6, 1), country_code="IT", country_name="Италия"),
+                VisitedCountry(user_id=user_id, country_code="IT", country_name="Италия", source="memory"),
+                WishlistCountry(user_id=user_id, country_code="JP", country_name="Япония"),
+            ])
+            db.commit()
+        page = client.get("/statistics")
+        assert page.status_code == 200
+        assert "Статистика" in page.text and "Италия" in page.text
+        assert "2025" in page.text and "2026" in page.text
+
+
 def csrf_from(response) -> str:
     match = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
     assert match

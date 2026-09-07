@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-    <link rel="stylesheet" href="/static/css/app.css?v=favorites-1">
+    <link rel="stylesheet" href="/static/css/app.css?v=statistics-1">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -33,6 +33,7 @@
         <a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}><span>{{ 'Places' if en else 'Места' }}</span><small>{{ 'Memory map' if en else 'Карта воспоминаний' }}</small></a>
         <a href="/timeline" {% if request.url.path == '/timeline' %}class="active"{% endif %}><span>{{ 'Timeline' if en else 'Лента' }}</span><small>{{ 'Journey chronology' if en else 'Хронология путешествий' }}</small></a>
         <a href="/favorites" {% if request.url.path == '/favorites' %}class="active"{% endif %}><span>{{ 'Favorites' if en else 'Избранное' }}</span><small>{{ 'Favorite memories' if en else 'Особенные воспоминания' }}</small></a>
+        <a href="/statistics" {% if request.url.path == '/statistics' %}class="active"{% endif %}><span>{{ 'Statistics' if en else 'Статистика' }}</span><small>{{ 'Travel in numbers' if en else 'Путешествия в цифрах' }}</small></a>
         <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
         <a href="/friends" {% if request.url.path.startswith('/friends') %}class="active"{% endif %}><span>{{ 'Friends' if en else 'Друзья' }} <b class="friend-request-badge" hidden>0</b></span><small>{{ 'Travel circle' if en else 'Круг путешественников' }}</small></a>

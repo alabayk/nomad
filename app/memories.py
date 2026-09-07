@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -493,6 +494,30 @@ def favorite_memories(request: Request, db: Session = Depends(get_db)) -> HTMLRe
     })
     set_csrf_cookie(response, csrf_token)
     return response
+
+
+@router.get("/statistics", response_class=HTMLResponse)
+def travel_statistics(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    memories = list(db.scalars(select(Memory).where(Memory.user_id == user.id)))
+    visited_count = len(list(db.scalars(select(VisitedCountry.id).where(VisitedCountry.user_id == user.id))))
+    wishlist_count = len(list(db.scalars(select(WishlistCountry.id).where(WishlistCountry.user_id == user.id))))
+    year_counts = Counter(item.visit_date.year for item in memories)
+    month_counts = Counter(item.visit_date.month for item in memories)
+    country_counts = Counter((item.country_code, item.country_name or item.country_code) for item in memories if item.country_code)
+    max_year, max_month, max_country = max(year_counts.values(), default=1), max(month_counts.values(), default=1), max(country_counts.values(), default=1)
+    en = user.language == "en"
+    return templates.TemplateResponse(request=request, name="statistics.html", context={
+        "user": user, "memory_count": len(memories), "visited_count": visited_count,
+        "wishlist_count": wishlist_count, "photo_count": sum(len(item.photo_urls) for item in memories),
+        "favorite_count": sum(bool(item.is_favorite) for item in memories),
+        "first_year": min(year_counts, default=None), "last_year": max(year_counts, default=None),
+        "years": [{"label": str(year), "count": count, "percent": round(count / max_year * 100)} for year, count in sorted(year_counts.items())],
+        "months": [{"label": (EN_MONTHS if en else RU_MONTHS)[month], "count": month_counts[month], "percent": round(month_counts[month] / max_month * 100)} for month in range(1, 13)],
+        "top_countries": [{"code": key[0], "name": key[1], "count": count, "percent": round(count / max_country * 100)} for key, count in country_counts.most_common(6)],
+    })
 
 
 @router.post("/memories/{memory_id}/favorite")
