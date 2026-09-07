@@ -5,7 +5,7 @@
   <a class="auth-back" href="/about">← Назад</a>
   <p class="eyebrow">Новый маршрут начинается здесь</p>
   <h1>Создать аккаунт</h1>
-  <p class="muted">Сохраняйте места и фотографии в личной коллекции.</p>
+  <p class="muted">Сохраняйте воспоминания и фотографии в личной коллекции.</p>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
   <form method="post" action="/register" enctype="multipart/form-data" class="auth-form" accept-charset="UTF-8" data-fresh-csrf>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

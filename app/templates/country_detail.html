@@ -12,13 +12,13 @@
 
   <section class="country-stat-grid" aria-label="{{ 'Country statistics' if en else 'Статистика страны' }}">
     <div><strong>{{ memory_count }}</strong><span>{{ 'memories' if en else 'воспоминаний' }}</span></div>
-    <div><strong>{{ unique_places }}</strong><span>{{ 'places' if en else 'мест' }}</span></div>
+    <div><strong>{{ unique_places }}</strong><span>{{ 'unique locations' if en else 'уникальных локаций' }}</span></div>
     <div><strong>{{ first_visit or '—' }}</strong><span>{{ 'first visit' if en else 'первая поездка' }}</span></div>
     <div><strong>{{ last_visit or '—' }}</strong><span>{{ 'latest visit' if en else 'последняя поездка' }}</span></div>
   </section>
 
   <section class="country-map-section">
-    <div class="map-frame-label"><span>01</span>{{ 'Country and places' if en else 'Страна и места' }}</div>
+    <div class="map-frame-label"><span>01</span>{{ 'Country and memories' if en else 'Страна и воспоминания' }}</div>
     <div id="country-detail-map" aria-label="{{ 'Map of' if en else 'Карта страны' }} {{ country.country_name }}"></div>
   </section>
 

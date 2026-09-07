@@ -49,7 +49,7 @@ async def geocode_place(db: Session, place_name: str) -> GeocodeResult:
 
     query = _normalized_query(place_name)
     if not query:
-        raise GeocodingError("Введите название места.")
+        raise GeocodingError("Введите название локации для воспоминания.")
 
     cached = db.scalar(select(GeocodeCache).where(GeocodeCache.query == query))
     if cached:

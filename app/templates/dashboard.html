@@ -6,7 +6,7 @@
 {% block content %}
 <div class="dashboard-shell">
   <nav class="map-tabs" aria-label="Разделы карты">
-    <a class="active" href="/dashboard">{{ 'Places' if en else 'Места' }}</a>
+    <a class="active" href="/dashboard">{{ 'Memories' if en else 'Воспоминания' }}</a>
     <a href="/countries">{{ 'Visited countries' if en else 'Посещённые страны' }}</a>
     <a href="/wishlist">{{ 'Want to visit' if en else 'Хочу посетить' }}</a>
   </nav>
@@ -21,7 +21,7 @@
     </div>
   </header>
 
-  <form class="filters timeline-filters places-filters" id="memory-filters" method="get" action="/dashboard" data-filter-label="{{ 'PLACE FILTERS' if en else 'ФИЛЬТРЫ МЕСТ' }}">
+  <form class="filters timeline-filters places-filters" id="memory-filters" method="get" action="/dashboard" data-filter-label="{{ 'MEMORY FILTERS' if en else 'ФИЛЬТРЫ ВОСПОМИНАНИЙ' }}">
     <label>{{ 'Year' if en else 'Год' }}
       <select name="year" id="filter-year">
         <option value="">{{ 'All years' if en else 'Все годы' }}</option>
@@ -44,7 +44,7 @@
   </section>
 
   <section class="memory-list-section">
-    <div class="section-heading"><h2>{{ 'Places' if en else 'Места' }}</h2><span>{{ memories|length }}</span></div>
+    <div class="section-heading"><h2>{{ 'Memories' if en else 'Воспоминания' }}</h2><span>{{ memories|length }}</span></div>
     <div class="memory-grid">
       {% for memory in memories %}
       <a class="memory-polaroid" href="/memories/{{ memory.id }}" aria-label="Открыть воспоминание: {{ memory.place_name }}">
@@ -122,7 +122,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'map-reset-button';
-      button.title = {{ ('Show all places' if en else 'Показать все места') | tojson }};
+      button.title = {{ ('Show all memories' if en else 'Показать все воспоминания') | tojson }};
       button.setAttribute('aria-label', button.title);
       button.textContent = '⌂';
       button.addEventListener('click', () => resetMapView());

@@ -6,7 +6,7 @@
 {% block content %}
 <div class="dashboard-shell">
   <nav class="map-tabs" aria-label="{{ 'Map sections' if en else 'Разделы карты' }}">
-    <a href="/dashboard">{{ 'Places' if en else 'Места' }}</a>
+    <a href="/dashboard">{{ 'Memories' if en else 'Воспоминания' }}</a>
     <a {% if page_mode == 'visited' %}class="active"{% endif %} href="/countries">{{ 'Visited countries' if en else 'Посещённые страны' }}</a>
     <a {% if page_mode == 'wishlist' %}class="active"{% endif %} href="/wishlist">{{ 'Want to visit' if en else 'Хочу посетить' }}</a>
   </nav>
@@ -16,7 +16,7 @@
       <h1>{{ page_title }}</h1>
       <p class="muted">{{ page_description }}</p>
     </div>
-    <a class="button-link secondary-link" href="/dashboard">{{ 'Back to places' if en else 'К местам' }}</a>
+    <a class="button-link secondary-link" href="/dashboard">{{ 'Back to memories' if en else 'К воспоминаниям' }}</a>
   </header>
 
   <section class="countries-layout">
