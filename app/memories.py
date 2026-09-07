@@ -598,10 +598,17 @@ def memory_detail(
             MemoryShare.memory_id == memory.id, MemoryShare.user_id == user.id
         )
     )
+    source = request.query_params.get("from")
+    if source == "timeline":
+        back_url, back_label = "/timeline", ("Timeline" if user.language == "en" else "К ленте")
+    elif source == "country" and memory.country_code:
+        back_url, back_label = f"/countries/{memory.country_code}", ("Country" if user.language == "en" else "К стране")
+    else:
+        back_url, back_label = "/dashboard", ("Back to map" if user.language == "en" else "К карте")
     response = templates.TemplateResponse(
         request=request,
         name="memory_detail.html",
-        context={"user": user, "memory": memory, "share": share, "csrf_token": csrf_token},
+        context={"user": user, "memory": memory, "share": share, "csrf_token": csrf_token, "back_url": back_url, "back_label": back_label},
     )
     set_csrf_cookie(response, csrf_token)
     return response

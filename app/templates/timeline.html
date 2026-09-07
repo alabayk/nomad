@@ -24,15 +24,15 @@
       <div class="timeline-period-items">
         {% for entry in group['items'] %}{% set memory=entry.memory %}
         <article class="timeline-card timeline-reveal">
-          <a class="timeline-card-photo" href="/memories/{{ memory.id }}">
+          <a class="timeline-card-photo" href="/memories/{{ memory.id }}?from=timeline">
             {% if memory.photo_urls %}<img src="{{ memory.photo_urls[0] }}" alt="{{ memory.place_name }}" loading="lazy">{% else %}<div class="timeline-no-photo"><span>Nomad</span><small>{{ 'No photo' if en else 'Без фотографии' }}</small></div>{% endif %}
           </a>
           <div class="timeline-card-copy">
             <div class="timeline-card-meta"><span>{{ memory.country_name or ('Memory' if en else 'Воспоминание') }}</span>{% if entry.first_country_visit %}<em>{{ 'First visit' if en else 'Первая поездка' }}</em>{% endif %}</div>
-            <h3><a href="/memories/{{ memory.id }}">{{ memory.place_name }}</a></h3>
+            <h3><a href="/memories/{{ memory.id }}?from=timeline">{{ memory.place_name }}</a></h3>
             <p class="timeline-location">{{ memory.location_name or memory.place_name }}</p>
             {% if memory.description %}<p class="timeline-excerpt">{{ memory.description|truncate(220, true, '…') }}</p>{% endif %}
-            <a class="timeline-open" href="/memories/{{ memory.id }}">{{ 'Open memory' if en else 'Открыть воспоминание' }} <span>↗</span></a>
+            <a class="timeline-open" href="/memories/{{ memory.id }}?from=timeline">{{ 'Open memory' if en else 'Открыть воспоминание' }} <span>↗</span></a>
           </div>
         </article>
         {% endfor %}

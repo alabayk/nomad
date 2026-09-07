@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-    <link rel="stylesheet" href="/static/css/app.css?v=country-share-1">
+    <link rel="stylesheet" href="/static/css/app.css?v=share-return-2">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -68,6 +68,7 @@
         if (event.key === 'Escape' && siteMenu.classList.contains('open')) setMenu(false);
       });
       document.querySelectorAll('form[data-fresh-csrf]').forEach(form=>form.addEventListener('submit',async event=>{if(form.dataset.ready)return;event.preventDefault();try{const response=await fetch('/auth/csrf',{cache:'no-store',credentials:'same-origin'}),data=await response.json();form.elements.csrf_token.value=data.csrf_token;form.dataset.ready='1';form.submit()}catch(error){form.dataset.ready='1';form.submit()}}));
+      async function copyShareLink(button,path,successText){const text=location.origin+path,original=button.textContent;try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else throw new Error('fallback')}catch(error){const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');field.style.cssText='position:fixed;opacity:0';document.body.appendChild(field);field.select();field.setSelectionRange(0,text.length);document.execCommand('copy');field.remove()}button.textContent=successText;setTimeout(()=>button.textContent=original,1000)}
     </script>
     {% block scripts %}{% endblock %}
   </body>

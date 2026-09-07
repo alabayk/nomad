@@ -18,9 +18,12 @@ def test_private_memory_share_can_be_created_viewed_and_revoked(test_session_fac
         register(client, "share_owner")
         with test_session_factory() as db:
             user = db.scalar(select(User).where(User.username == "share_owner"))
-            memory = Memory(user_id=user.id, place_name="Тихая бухта", location_name="Берег", latitude=1, longitude=2, visit_date=date(2026, 3, 1), description="Личная история")
+            memory = Memory(user_id=user.id, place_name="Тихая бухта", location_name="Берег", latitude=1, longitude=2, visit_date=date(2026, 3, 1), description="Личная история", country_code="FR", country_name="Франция")
             db.add(memory); db.commit(); db.refresh(memory); memory_id = memory.id
         detail = client.get(f"/memories/{memory_id}")
+        assert 'href="/dashboard"' in detail.text
+        assert 'href="/timeline"' in client.get(f"/memories/{memory_id}?from=timeline").text
+        assert 'href="/countries/' in client.get(f"/memories/{memory_id}?from=country").text
         created = client.post(f"/memories/{memory_id}/share", data={"csrf_token": csrf_from(detail)}, follow_redirects=False)
         assert created.status_code == 303
         with test_session_factory() as db:
