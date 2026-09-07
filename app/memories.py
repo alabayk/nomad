@@ -15,7 +15,7 @@ from app.auth import csrf_token_for_request, current_user, set_csrf_cookie, vali
 from app.config import settings
 from app.database import get_db
 from app.geocoding import GeocodeResult, GeocodingError, geocode_place, reverse_geocode
-from app.models import Memory, MemoryShare, User, VisitedCountry, WishlistCountry
+from app.models import CountryShare, Memory, MemoryShare, User, VisitedCountry, WishlistCountry
 from app.photos import (
     PhotoError,
     delete_local_photos,
@@ -364,6 +364,34 @@ def dashboard(
     )
     set_csrf_cookie(response, csrf_token)
     return response
+
+
+@router.post("/countries/{country_code}/share")
+def create_country_share(country_code: str, request: Request, csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request); code = country_code.upper()
+    country = db.scalar(select(VisitedCountry).where(VisitedCountry.user_id == user.id, VisitedCountry.country_code == code)) if user else None
+    if user and country and valid_csrf_token(request, csrf_token) and db.scalar(select(CountryShare).where(CountryShare.user_id == user.id, CountryShare.country_code == code)) is None:
+        db.add(CountryShare(user_id=user.id, country_code=code, token=secrets.token_urlsafe(32))); db.commit()
+    return RedirectResponse(f"/countries/{code}", status_code=303)
+
+
+@router.post("/countries/{country_code}/share/delete")
+def delete_country_share(country_code: str, request: Request, csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request); code = country_code.upper()
+    share = db.scalar(select(CountryShare).where(CountryShare.user_id == user.id, CountryShare.country_code == code)) if user else None
+    if share and valid_csrf_token(request, csrf_token): db.delete(share); db.commit()
+    return RedirectResponse(f"/countries/{code}", status_code=303)
+
+
+@router.get("/shared/country/{token}", response_class=HTMLResponse)
+def shared_country(token: str, request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    share = db.scalar(select(CountryShare).where(CountryShare.token == token))
+    owner = db.get(User, share.user_id) if share else None
+    if not owner: return templates.TemplateResponse(request=request, name="not_found.html", context={"user": None}, status_code=404)
+    memories = list(db.scalars(select(Memory).where(Memory.user_id == owner.id, Memory.country_code == share.country_code).order_by(Memory.visit_date.desc())))
+    country = db.scalar(select(VisitedCountry).where(VisitedCountry.user_id == owner.id, VisitedCountry.country_code == share.country_code))
+    photos = [{"url": url, "name": item.place_name} for item in memories for url in item.photo_urls]
+    return templates.TemplateResponse(request=request, name="shared_country.html", context={"user": None, "owner": owner, "country": country, "memories": memories, "photos": photos})
 
 
 @router.get("/timeline", response_class=HTMLResponse)
@@ -859,6 +887,9 @@ def country_detail_page(
         for item in memories
     ]
     csrf_token = csrf_token_for_request(request)
+    country_share = db.scalar(select(CountryShare).where(
+        CountryShare.user_id == user.id, CountryShare.country_code == code
+    ))
     response = templates.TemplateResponse(
         request=request,
         name="country_detail.html",
@@ -879,6 +910,7 @@ def country_detail_page(
             )) is not None,
             "can_remove_manual": country.source == "manual",
             "csrf_token": csrf_token,
+            "country_share": country_share,
         },
     )
     set_csrf_cookie(response, csrf_token)
