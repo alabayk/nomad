@@ -7,7 +7,7 @@
     <span class="timeline-total">{{ memory_count }}<small>{{ 'memories' if en else 'воспоминаний' }}</small></span>
   </header>
 
-  <form class="timeline-filters" id="timeline-filters" method="get" action="/timeline">
+  <form class="timeline-filters" id="timeline-filters" method="get" action="/timeline" data-filter-label="{{ 'TIMELINE FILTERS' if en else 'ФИЛЬТРЫ ЛЕНТЫ' }}">
     <label>{{ 'Year' if en else 'Год' }}<select name="year" id="timeline-year"><option value="">{{ 'All years' if en else 'Все годы' }}</option>{% for item in years %}<option value="{{ item }}" {% if selected_year == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
     <label>{{ 'Country' if en else 'Страна' }}<select name="country" id="timeline-country"><option value="">{{ 'All countries' if en else 'Все страны' }}</option>{% for code,name in countries %}<option value="{{ code }}" {% if selected_country == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
     <label>{{ 'Order' if en else 'Порядок' }}<select name="order"><option value="newest" {% if selected_order == 'newest' %}selected{% endif %}>{{ 'Newest first' if en else 'Сначала новые' }}</option><option value="oldest" {% if selected_order == 'oldest' %}selected{% endif %}>{{ 'Oldest first' if en else 'Сначала старые' }}</option></select></label>
