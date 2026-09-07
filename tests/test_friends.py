@@ -29,6 +29,12 @@ def test_friend_request_accept_remove_and_no_duplicates(test_session_factory):
         inbox = bob.get("/friends"); assert "Friend_Alice" in inbox.text
         accepted = bob.post(f"/friends/{connection_id}/accept", data={"csrf_token": csrf(inbox)}, follow_redirects=False)
         assert accepted.status_code == 303 and "Friend_Bob" in alice.get("/friends").text
+        profile = alice.get("/friends/friend_bob")
+        assert profile.status_code == 200 and "ПРОФИЛЬ ДРУГА" in profile.text
+        assert alice.get("/friends/friend_alice").status_code == 404
+        with TestClient(app) as stranger:
+            register(stranger, "friend_stranger")
+            assert stranger.get("/friends/friend_bob").status_code == 404
         page = alice.get("/friends")
         alice.post(f"/friends/{connection_id}/remove", data={"csrf_token": csrf(page)})
         with test_session_factory() as db: assert db.get(Friendship, connection_id) is None

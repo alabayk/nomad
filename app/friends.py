@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import csrf_token_for_request, current_user, set_csrf_cookie, valid_csrf_token
 from app.database import get_db
-from app.models import Friendship, User
+from app.models import Friendship, Memory, User, VisitedCountry
 from pathlib import Path
 
 router = APIRouter()
@@ -39,6 +39,23 @@ def friends_page(request: Request, q: str = "", db: Session = Depends(get_db)):
     csrf = csrf_token_for_request(request)
     response = templates.TemplateResponse(request=request, name="friends.html", context={"user": user, "friends": friends, "incoming": incoming, "outgoing": outgoing, "query": q.strip(), "result": result, "result_connection": result_connection, "csrf_token": csrf})
     set_csrf_cookie(response, csrf); return response
+
+
+@router.get("/friends/{username}", response_class=HTMLResponse)
+def friend_profile(username: str, request: Request, db: Session = Depends(get_db)):
+    user = current_user(db, request)
+    if not user: return _login()
+    friend = db.scalar(select(User).where(User.username == username.strip().lower()))
+    connection = _connection(db, user.id, friend.id) if friend and friend.id != user.id else None
+    if not friend or not connection or connection.status != "accepted":
+        return templates.TemplateResponse(request=request, name="not_found.html", context={"user": user}, status_code=404)
+    memories = list(db.scalars(select(Memory).where(Memory.user_id == friend.id).order_by(Memory.visit_date.desc(), Memory.id.desc())))
+    countries = list(db.scalars(select(VisitedCountry).where(VisitedCountry.user_id == friend.id).order_by(VisitedCountry.country_name)))
+    return templates.TemplateResponse(request=request, name="friend_profile.html", context={
+        "user": user, "friend": friend, "memories": memories, "countries": countries,
+        "place_count": len({(item.location_name or item.place_name).strip().casefold() for item in memories}),
+        "years": len({item.visit_date.year for item in memories}),
+    })
 
 
 @router.post("/friends/request")
