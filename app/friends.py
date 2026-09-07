@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
@@ -37,8 +37,16 @@ def friends_page(request: Request, q: str = "", db: Session = Depends(get_db)):
     query = q.strip().lower(); result = db.scalar(select(User).where(User.username == query)) if query and query != user.username else None
     result_connection = _connection(db, user.id, result.id) if result else None
     csrf = csrf_token_for_request(request)
-    response = templates.TemplateResponse(request=request, name="friends.html", context={"user": user, "friends": friends, "incoming": incoming, "outgoing": outgoing, "query": q.strip(), "result": result, "result_connection": result_connection, "csrf_token": csrf})
+    response = templates.TemplateResponse(request=request, name="friends.html", context={"user": user, "friends": friends, "incoming": incoming, "outgoing": outgoing, "query": q.strip(), "result": result, "result_connection": result_connection, "csrf_token": csrf, "notice": request.query_params.get("notice", "")})
     set_csrf_cookie(response, csrf); return response
+
+
+@router.get("/friends/pending-count")
+def pending_friend_count(request: Request, db: Session = Depends(get_db)):
+    user = current_user(db, request)
+    if not user: return JSONResponse({"count": 0}, status_code=401)
+    count = len(list(db.scalars(select(Friendship.id).where(Friendship.addressee_id == user.id, Friendship.status == "pending"))))
+    return {"count": count}
 
 
 @router.get("/friends/{username}", response_class=HTMLResponse)
@@ -67,7 +75,7 @@ def send_request(request: Request, username: str = Form(...), csrf_token: str = 
         existing = _connection(db, user.id, target.id)
         if existing is None: db.add(Friendship(requester_id=user.id, addressee_id=target.id)); db.commit()
         elif existing.status == "pending" and existing.requester_id == target.id: existing.status = "accepted"; db.commit()
-    return RedirectResponse("/friends", status_code=303)
+    return RedirectResponse("/friends?notice=sent", status_code=303)
 
 
 def _act(connection_id: int, action: str, request: Request, csrf_token: str, db: Session):
@@ -77,7 +85,8 @@ def _act(connection_id: int, action: str, request: Request, csrf_token: str, db:
     allowed = item and user.id in (item.requester_id, item.addressee_id)
     if allowed and action == "accept" and item.status == "pending" and item.addressee_id == user.id: item.status = "accepted"; db.commit()
     elif allowed and action in {"decline", "cancel", "remove"}: db.delete(item); db.commit()
-    return RedirectResponse("/friends", status_code=303)
+    notice = {"accept": "accepted", "decline": "declined", "cancel": "cancelled", "remove": "removed"}.get(action, "")
+    return RedirectResponse(f"/friends?notice={notice}", status_code=303)
 
 
 @router.post("/friends/{connection_id}/{action}")

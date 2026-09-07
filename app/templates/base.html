@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-    <link rel="stylesheet" href="/static/css/app.css?v=friend-profile-1">
+    <link rel="stylesheet" href="/static/css/app.css?v=friends-complete-1">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -34,7 +34,7 @@
         <a href="/timeline" {% if request.url.path == '/timeline' %}class="active"{% endif %}><span>{{ 'Timeline' if en else 'Лента' }}</span><small>{{ 'Journey chronology' if en else 'Хронология путешествий' }}</small></a>
         <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
-        <a href="/friends" {% if request.url.path == '/friends' %}class="active"{% endif %}><span>{{ 'Friends' if en else 'Друзья' }}</span><small>{{ 'Travel circle' if en else 'Круг путешественников' }}</small></a>
+        <a href="/friends" {% if request.url.path.startswith('/friends') %}class="active"{% endif %}><span>{{ 'Friends' if en else 'Друзья' }} <b class="friend-request-badge" hidden>0</b></span><small>{{ 'Travel circle' if en else 'Круг путешественников' }}</small></a>
         {% endif %}
         <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, data management' if en else 'Язык, управление данными' }}</small></a>
       </nav>
@@ -71,6 +71,7 @@
       document.querySelectorAll('form[data-fresh-csrf]').forEach(form=>form.addEventListener('submit',async event=>{if(form.dataset.ready)return;event.preventDefault();try{const response=await fetch('/auth/csrf',{cache:'no-store',credentials:'same-origin'}),data=await response.json();form.elements.csrf_token.value=data.csrf_token;form.dataset.ready='1';form.submit()}catch(error){form.dataset.ready='1';form.submit()}}));
       function copyShareLink(button,path,successText){const text=new URL(path,location.origin).href,original=button.textContent;button.textContent=successText;button.classList.add('is-copied');const field=document.createElement('textarea');field.value=text;field.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01';document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);let copied=false;try{copied=document.execCommand('copy')}catch(error){}field.remove();if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).catch(()=>{});if(!copied&&!navigator.clipboard){window.prompt(successText,text)}setTimeout(()=>{button.textContent=original;button.classList.remove('is-copied')},1000)}
       document.addEventListener('click',event=>{const button=event.target.closest('.js-copy-share');if(button){event.preventDefault();copyShareLink(button,button.dataset.sharePath,button.dataset.successText)}});
+      {% if user %}fetch('/friends/pending-count',{credentials:'same-origin'}).then(response=>response.ok?response.json():null).then(data=>{if(data&&data.count){const badge=document.querySelector('.friend-request-badge');badge.textContent=data.count;badge.hidden=false}}).catch(()=>{});{% endif %}
     </script>
     {% block scripts %}{% endblock %}
   </body>
