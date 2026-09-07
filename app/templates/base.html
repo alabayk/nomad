@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-  <link rel="stylesheet" href="/static/css/app.css?v=country-note-2">
+  <link rel="stylesheet" href="/static/css/app.css?v=timeline-1">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -31,6 +31,7 @@
         <a href="/about" {% if request.url.path == '/about' %}class="active"{% endif %}><span>{{ 'About' if en else 'О нас' }}</span><small>{{ 'About Nomad' if en else 'О проекте Nomad' }}</small></a>
         {% if user %}
         <a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}><span>{{ 'Places' if en else 'Места' }}</span><small>{{ 'Memory map' if en else 'Карта воспоминаний' }}</small></a>
+        <a href="/timeline" {% if request.url.path == '/timeline' %}class="active"{% endif %}><span>{{ 'Timeline' if en else 'Лента' }}</span><small>{{ 'Journey chronology' if en else 'Хронология путешествий' }}</small></a>
         <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
         {% endif %}

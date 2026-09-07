@@ -323,3 +323,34 @@ def test_country_page_requires_visited_mark_and_is_user_scoped(test_session_fact
         page = stranger.get("/countries/JP")
         assert page.status_code == 404
         assert "Private" not in page.text
+
+
+def test_timeline_groups_orders_and_filters_memories(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "timeline_user")
+        with test_session_factory() as db:
+            user_id = db.scalar(select(User.id).where(User.username == "timeline_user"))
+            db.add_all([
+                Memory(user_id=user_id, place_name="Первый Париж", location_name="Париж", latitude=48.8, longitude=2.3, visit_date=date(2024, 4, 1), country_code="FR", country_name="Франция"),
+                Memory(user_id=user_id, place_name="Снова Париж", location_name="Париж", latitude=48.8, longitude=2.3, visit_date=date(2025, 6, 1), country_code="FR", country_name="Франция"),
+                Memory(user_id=user_id, place_name="Стамбул", location_name="Стамбул", latitude=41.0, longitude=28.9, visit_date=date(2025, 8, 1), country_code="TR", country_name="Турция"),
+            ])
+            db.commit()
+
+        page = client.get("/timeline")
+        assert page.status_code == 200
+        assert "Лента путешествий" in page.text
+        assert page.text.index("Стамбул") < page.text.index("Первый Париж")
+        assert page.text.count("Первая поездка") == 2
+        assert 'href="/timeline?year=2025"' in page.text
+
+        oldest = client.get("/timeline?order=oldest")
+        assert oldest.text.index("Первый Париж") < oldest.text.index("Стамбул")
+        by_year = client.get("/timeline?year=2024")
+        assert "Первый Париж" in by_year.text and "Стамбул" not in by_year.text
+        assert "Франция" in by_year.text and "Турция" not in by_year.text
+        by_country = client.get("/timeline?country=TR")
+        assert "Стамбул" in by_country.text and "Первый Париж" not in by_country.text
+        assert ">2025<" in by_country.text and ">2024<" not in by_country.text
+        invalid = client.get("/timeline?year=&country=")
+        assert invalid.status_code == 200

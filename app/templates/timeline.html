@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Timeline' if en else 'Лента путешествий' }} — Nomad{% endblock %}
+{% block content %}
+<div class="timeline-page">
+  <header class="timeline-hero">
+    <div><p class="eyebrow">{{ 'Personal chronology' if en else 'Личная хронология' }}</p><h1>{{ 'Travel timeline' if en else 'Лента путешествий' }}</h1><p class="muted">{{ 'Your memories, arranged into one continuous journey.' if en else 'Ваши воспоминания, собранные в одно непрерывное путешествие.' }}</p></div>
+    <span class="timeline-total">{{ memory_count }}<small>{{ 'memories' if en else 'воспоминаний' }}</small></span>
+  </header>
+
+  <form class="timeline-filters" id="timeline-filters" method="get" action="/timeline">
+    <label>{{ 'Year' if en else 'Год' }}<select name="year" id="timeline-year"><option value="">{{ 'All years' if en else 'Все годы' }}</option>{% for item in years %}<option value="{{ item }}" {% if selected_year == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label>{{ 'Country' if en else 'Страна' }}<select name="country" id="timeline-country"><option value="">{{ 'All countries' if en else 'Все страны' }}</option>{% for code,name in countries %}<option value="{{ code }}" {% if selected_country == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+    <label>{{ 'Order' if en else 'Порядок' }}<select name="order"><option value="newest" {% if selected_order == 'newest' %}selected{% endif %}>{{ 'Newest first' if en else 'Сначала новые' }}</option><option value="oldest" {% if selected_order == 'oldest' %}selected{% endif %}>{{ 'Oldest first' if en else 'Сначала старые' }}</option></select></label>
+    <button type="submit">{{ 'Show' if en else 'Показать' }}</button>
+    {% if selected_year or selected_country or selected_order == 'oldest' %}<a href="/timeline">{{ 'Reset' if en else 'Сбросить' }}</a>{% endif %}
+  </form>
+
+  {% if all_years %}<nav class="timeline-year-nav" aria-label="{{ 'Jump to year' if en else 'Перейти к году' }}">{% for item in all_years %}<a href="/timeline?year={{ item }}{% if selected_country %}&amp;country={{ selected_country }}{% endif %}{% if selected_order == 'oldest' %}&amp;order=oldest{% endif %}">{{ item }}</a>{% endfor %}</nav>{% endif %}
+
+  <section class="timeline-stream">
+    {% for group in groups %}
+    <section class="timeline-period" id="period-{{ group.year }}-{{ '%02d'|format(group.key[1]) }}">
+      <header><span>{{ '%02d'|format(group.key[1]) }}</span><h2>{{ group.month }}</h2><strong>{{ group.year }}</strong></header>
+      <div class="timeline-period-items">
+        {% for entry in group['items'] %}{% set memory=entry.memory %}
+        <article class="timeline-card timeline-reveal">
+          <a class="timeline-card-photo" href="/memories/{{ memory.id }}">
+            {% if memory.photo_urls %}<img src="{{ memory.photo_urls[0] }}" alt="{{ memory.place_name }}" loading="lazy">{% else %}<div class="timeline-no-photo"><span>Nomad</span><small>{{ 'No photo' if en else 'Без фотографии' }}</small></div>{% endif %}
+          </a>
+          <div class="timeline-card-copy">
+            <div class="timeline-card-meta"><span>{{ memory.country_name or ('Memory' if en else 'Воспоминание') }}</span>{% if entry.first_country_visit %}<em>{{ 'First visit' if en else 'Первая поездка' }}</em>{% endif %}</div>
+            <h3><a href="/memories/{{ memory.id }}">{{ memory.place_name }}</a></h3>
+            <p class="timeline-location">{{ memory.location_name or memory.place_name }}</p>
+            {% if memory.description %}<p class="timeline-excerpt">{{ memory.description|truncate(220, true, '…') }}</p>{% endif %}
+            <a class="timeline-open" href="/memories/{{ memory.id }}">{{ 'Open memory' if en else 'Открыть воспоминание' }} <span>↗</span></a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}<div class="timeline-empty"><p class="eyebrow">{{ 'No entries' if en else 'Пока пусто' }}</p><h2>{{ 'No memories match these filters.' if en else 'По этим параметрам воспоминаний нет.' }}</h2><a class="button-link" href="/memories/new">{{ 'Add a memory' if en else 'Добавить воспоминание' }}</a></div>{% endfor %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+  const timelinePairs={{ filter_pairs|tojson }},timelineYear=document.getElementById('timeline-year'),timelineCountry=document.getElementById('timeline-country');
+  function timelineOptions(select,items,label,selected){select.replaceChildren(new Option(label,''));items.forEach(item=>select.add(new Option(item.label,item.value)));select.value=items.some(item=>item.value===selected)?selected:''}
+  timelineYear.addEventListener('change',()=>{const year=timelineYear.value,previous=timelineCountry.value,countries=new Map();timelinePairs.forEach(item=>{if(!year||String(item.year)===year)countries.set(item.code,item.name)});timelineOptions(timelineCountry,[...countries].sort((a,b)=>a[1].localeCompare(b[1])).map(([value,label])=>({value,label})),{{ ('All countries' if en else 'Все страны')|tojson }},previous)});
+  timelineCountry.addEventListener('change',()=>{const code=timelineCountry.value,previous=timelineYear.value,years=[...new Set(timelinePairs.filter(item=>!code||item.code===code).map(item=>item.year))].sort((a,b)=>b-a).map(value=>({value:String(value),label:String(value)}));timelineOptions(timelineYear,years,{{ ('All years' if en else 'Все годы')|tojson }},previous)});
+  document.getElementById('timeline-filters').addEventListener('submit',()=>[timelineYear,timelineCountry].forEach(select=>{select.disabled=!select.value}));
+  const timelineItems=document.querySelectorAll('.timeline-reveal');
+  if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('is-visible');else if(entry.boundingClientRect.top>0)entry.target.classList.remove('is-visible')}),{threshold:.12,rootMargin:'0px 0px -5%'});timelineItems.forEach((item,index)=>{item.style.setProperty('--timeline-delay',`${Math.min(index%4,3)*70}ms`);observer.observe(item)})}else timelineItems.forEach(item=>item.classList.add('is-visible'));
+</script>{% endblock %}

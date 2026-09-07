@@ -365,6 +365,87 @@ def dashboard(
     return response
 
 
+@router.get("/timeline", response_class=HTMLResponse)
+def travel_timeline(
+    request: Request,
+    year: str | None = None,
+    country: str | None = None,
+    order: str = "newest",
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    all_memories = list(db.scalars(
+        select(Memory).where(Memory.user_id == user.id)
+        .order_by(Memory.visit_date.asc(), Memory.id.asc())
+    ))
+    try:
+        selected_year = int(year) if year and year.strip() else None
+    except ValueError:
+        selected_year = None
+    selected_country = country.strip().upper() if country and country.strip() else ""
+    selected_order = "oldest" if order == "oldest" else "newest"
+    years = sorted({
+        item.visit_date.year for item in all_memories
+        if not selected_country or item.country_code == selected_country
+    }, reverse=True)
+    countries = sorted({
+        (item.country_code, item.country_name or item.country_code)
+        for item in all_memories if item.country_code
+        and (selected_year is None or item.visit_date.year == selected_year)
+    }, key=lambda item: item[1])
+    first_country_memory_ids: set[int] = set()
+    seen_countries: set[str] = set()
+    for item in all_memories:
+        if item.country_code and item.country_code not in seen_countries:
+            seen_countries.add(item.country_code)
+            first_country_memory_ids.add(item.id)
+    filtered = [
+        item for item in all_memories
+        if (selected_year is None or item.visit_date.year == selected_year)
+        and (not selected_country or item.country_code == selected_country)
+    ]
+    filtered.sort(
+        key=lambda item: (item.visit_date, item.id),
+        reverse=selected_order == "newest",
+    )
+    en = user.language == "en"
+    groups: list[dict[str, object]] = []
+    for item in filtered:
+        key = (item.visit_date.year, item.visit_date.month)
+        if not groups or groups[-1]["key"] != key:
+            groups.append({
+                "key": key,
+                "year": item.visit_date.year,
+                "month": (EN_MONTHS if en else RU_MONTHS)[item.visit_date.month],
+                "items": [],
+            })
+        groups[-1]["items"].append({
+            "memory": item,
+            "first_country_visit": item.id in first_country_memory_ids,
+        })
+    return templates.TemplateResponse(
+        request=request,
+        name="timeline.html",
+        context={
+            "user": user,
+            "groups": groups,
+            "memory_count": len(filtered),
+            "years": years,
+            "countries": countries,
+            "all_years": years,
+            "selected_year": selected_year,
+            "selected_country": selected_country,
+            "selected_order": selected_order,
+            "filter_pairs": [
+                {"year": item.visit_date.year, "code": item.country_code, "name": item.country_name or item.country_code}
+                for item in all_memories if item.country_code
+            ],
+        },
+    )
+
+
 @router.get("/memories/new", response_class=HTMLResponse)
 def new_memory_page(request: Request, country: str = "", db: Session = Depends(get_db)) -> HTMLResponse:
     user = current_user(db, request)
