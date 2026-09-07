@@ -13,6 +13,10 @@
     {% for url in memory.photo_urls %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer"><img src="{{ url }}" alt="{{ 'Photo' if en else 'Фото' }} {{ loop.index }}: {{ memory.place_name }}" loading="lazy"></a>{% endfor %}
   </div>
   {% endif %}
+  <section class="share-panel">
+    <div><p class="eyebrow">{{ 'PRIVATE LINK' if en else 'ПРИВАТНАЯ ССЫЛКА' }}</p><h2>{{ 'Share this memory' if en else 'Поделиться воспоминанием' }}</h2><p>{{ 'Anyone with the link can view this memory without signing in.' if en else 'Открыть воспоминание сможет только тот, у кого есть ссылка. Вход не потребуется.' }}</p></div>
+    {% if share %}<div class="share-actions"><input id="share-url" readonly value="{{ request.url_for('shared_memory', token=share.token) }}"><button type="button" onclick="navigator.clipboard.writeText(document.getElementById('share-url').value);this.textContent={{ ('Copied' if en else 'Скопировано')|tojson }}">{{ 'Copy link' if en else 'Копировать ссылку' }}</button><form method="post" action="/memories/{{ memory.id }}/share/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button-quiet" type="submit">{{ 'Disable' if en else 'Отключить' }}</button></form></div>{% else %}<form method="post" action="/memories/{{ memory.id }}/share"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit">{{ 'Create private link' if en else 'Создать приватную ссылку' }}</button></form>{% endif %}
+  </section>
   <footer class="detail-footer">
     <span>{{ '%.5f'|format(memory.latitude) }}, {{ '%.5f'|format(memory.longitude) }}</span>
     <form method="post" action="/memories/{{ memory.id }}/delete" onsubmit="return confirm({{ ('Delete this memory?' if en else 'Удалить это воспоминание?') | tojson }})">

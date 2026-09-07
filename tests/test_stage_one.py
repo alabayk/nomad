@@ -36,6 +36,7 @@ def test_database_contains_stage_one_tables(tmp_path: Path) -> None:
         "auth_sessions",
         "geocode_cache",
         "memories",
+        "memory_shares",
         "users",
         "visited_countries",
         "wishlist_countries",

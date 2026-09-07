@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import date
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from app.auth import csrf_token_for_request, current_user, set_csrf_cookie, vali
 from app.config import settings
 from app.database import get_db
 from app.geocoding import GeocodeResult, GeocodingError, geocode_place, reverse_geocode
-from app.models import Memory, User, VisitedCountry, WishlistCountry
+from app.models import Memory, MemoryShare, User, VisitedCountry, WishlistCountry
 from app.photos import (
     PhotoError,
     delete_local_photos,
@@ -564,13 +565,53 @@ def memory_detail(
             request=request, name="not_found.html", context={"user": user}, status_code=404
         )
     csrf_token = csrf_token_for_request(request)
+    share = db.scalar(
+        select(MemoryShare).where(
+            MemoryShare.memory_id == memory.id, MemoryShare.user_id == user.id
+        )
+    )
     response = templates.TemplateResponse(
         request=request,
         name="memory_detail.html",
-        context={"user": user, "memory": memory, "csrf_token": csrf_token},
+        context={"user": user, "memory": memory, "share": share, "csrf_token": csrf_token},
     )
     set_csrf_cookie(response, csrf_token)
     return response
+
+
+@router.post("/memories/{memory_id}/share")
+def create_memory_share(memory_id: int, request: Request, csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    memory = _memory_for_user(db, memory_id, user.id)
+    if memory is None or not valid_csrf_token(request, csrf_token):
+        return RedirectResponse("/dashboard", status_code=303)
+    if db.scalar(select(MemoryShare).where(MemoryShare.memory_id == memory.id)) is None:
+        db.add(MemoryShare(memory_id=memory.id, user_id=user.id, token=secrets.token_urlsafe(32)))
+        db.commit()
+    return RedirectResponse(f"/memories/{memory.id}?shared=1", status_code=303)
+
+
+@router.post("/memories/{memory_id}/share/delete")
+def delete_memory_share(memory_id: int, request: Request, csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    share = db.scalar(select(MemoryShare).where(MemoryShare.memory_id == memory_id, MemoryShare.user_id == user.id))
+    if share is not None and valid_csrf_token(request, csrf_token):
+        db.delete(share)
+        db.commit()
+    return RedirectResponse(f"/memories/{memory_id}", status_code=303)
+
+
+@router.get("/shared/{token}", response_class=HTMLResponse)
+def shared_memory(token: str, request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+    share = db.scalar(select(MemoryShare).where(MemoryShare.token == token))
+    memory = db.get(Memory, share.memory_id) if share else None
+    if memory is None:
+        return templates.TemplateResponse(request=request, name="not_found.html", context={"user": None}, status_code=404)
+    return templates.TemplateResponse(request=request, name="shared_memory.html", context={"user": None, "memory": memory, "owner": db.get(User, share.user_id)})
 
 
 @router.get("/memories/{memory_id}/edit", response_class=HTMLResponse)

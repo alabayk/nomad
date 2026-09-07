@@ -517,6 +517,7 @@ body[data-scroll-direction="up"] .process-heading{transition-delay:calc(var(--re
 .timeline-filters button:hover{background:#eda080;transform:translateY(-1px)}
 .timeline-filters>a{position:absolute;right:27px;bottom:-31px;color:var(--muted);font-size:.86rem;text-underline-offset:4px}
 .timeline-year-nav{gap:9px;padding-top:24px}.timeline-year-nav a{padding:9px 15px;font-size:.86rem;transition:.25s}.timeline-year-nav a:hover{background:rgba(223,113,78,.08)}
+.share-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.75fr);align-items:end;gap:45px;margin:70px 0 25px;padding:34px 0;border-block:1px solid var(--line)}.share-panel h2{margin:10px 0;font-size:clamp(1.8rem,4vw,3.2rem);font-weight:300}.share-panel p{max-width:570px;color:var(--muted);line-height:1.6}.share-actions{display:grid;grid-template-columns:1fr auto;gap:10px}.share-actions input{grid-column:1/-1;font-size:.78rem}.share-actions form{display:contents}.share-actions button,.share-panel>form button{border-radius:999px}.button-quiet{background:transparent!important;color:var(--muted)!important}.shared-detail .detail-nav span{color:var(--rust);font-size:.68rem;letter-spacing:.13em}.shared-by{margin:18px 0 55px;color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}.shared-signature{display:flex;align-items:center;justify-content:space-between;margin-top:65px;padding-top:22px;border-top:1px solid var(--rust)}.shared-signature span{font-size:1.15rem;letter-spacing:.18em}.shared-signature small{color:var(--muted)}
 
 /* Forms and private pages — the same editorial system as the landing page. */
 .form-card.wide-card, .detail-card {
@@ -588,6 +589,7 @@ body[data-scroll-direction="up"] .process-heading{transition-delay:calc(var(--re
 :focus-visible { outline: 2px solid var(--rust-dark); outline-offset: 4px; }
 
 @media (max-width: 700px) {
+  .share-panel{grid-template-columns:1fr;gap:22px}.share-actions{grid-template-columns:1fr}.share-actions input{grid-column:1}.shared-signature{align-items:flex-start;flex-direction:column;gap:8px}
   .site-header { width: min(100% - 28px, 1280px); padding-top: 15px; }
   .brand-copy small { display: none; }
   .page-shell { padding: 26px 15px 52px; }

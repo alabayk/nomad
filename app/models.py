@@ -133,3 +133,13 @@ class Memory(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="memories")
+    shares: Mapped[list[MemoryShare]] = relationship(cascade="all, delete-orphan")
+
+
+class MemoryShare(Base):
+    __tablename__ = "memory_shares"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    memory_id: Mapped[int] = mapped_column(ForeignKey("memories.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

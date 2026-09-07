@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ memory.place_name }} — Nomad{% endblock %}
+{% block head %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block content %}
+<article class="detail-card shared-detail">
+  <nav class="detail-nav"><a href="/about">← Nomad</a><span>{{ 'VIEW ONLY' if en else 'ТОЛЬКО ПРОСМОТР' }}</span></nav>
+  <p class="eyebrow">{{ memory.country_name or ('Shared memory' if en else 'Воспоминание по ссылке') }}</p><h1>{{ memory.place_name }}</h1>
+  <time datetime="{{ memory.visit_date.strftime('%Y-%m') }}">{{ memory.visit_date.strftime('%m.%Y') }}</time>
+  <p class="shared-by">{{ 'From the travel archive of' if en else 'Из путевого архива' }} {{ owner.full_name or owner.username }}</p>
+  <p class="memory-location"><strong>{{ 'Location:' if en else 'Локация:' }}</strong> {{ memory.location_name or memory.place_name }}</p>
+  {% if memory.description %}<p class="memory-description">{{ memory.description }}</p>{% endif %}
+  {% if memory.photo_urls %}<div class="gallery">{% for url in memory.photo_urls %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer"><img src="{{ url }}" alt="{{ 'Photo' if en else 'Фото' }} {{ loop.index }}: {{ memory.place_name }}" loading="lazy"></a>{% endfor %}</div>{% endif %}
+  <footer class="shared-signature"><span>NOMAD</span><small>{{ 'A memory shared privately' if en else 'Воспоминание, которым поделились лично' }}</small></footer>
+</article>
+{% endblock %}

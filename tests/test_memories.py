@@ -10,7 +10,27 @@ import app.memories as memories_module
 from app.config import settings
 from app.geocoding import GeocodeResult, GeocodingError
 from app.main import app
-from app.models import Memory, User, VisitedCountry, WishlistCountry
+from app.models import Memory, MemoryShare, User, VisitedCountry, WishlistCountry
+
+
+def test_private_memory_share_can_be_created_viewed_and_revoked(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "share_owner")
+        with test_session_factory() as db:
+            user = db.scalar(select(User).where(User.username == "share_owner"))
+            memory = Memory(user_id=user.id, place_name="Тихая бухта", location_name="Берег", latitude=1, longitude=2, visit_date=date(2026, 3, 1), description="Личная история")
+            db.add(memory); db.commit(); db.refresh(memory); memory_id = memory.id
+        detail = client.get(f"/memories/{memory_id}")
+        created = client.post(f"/memories/{memory_id}/share", data={"csrf_token": csrf_from(detail)}, follow_redirects=False)
+        assert created.status_code == 303
+        with test_session_factory() as db:
+            token = db.scalar(select(MemoryShare.token).where(MemoryShare.memory_id == memory_id))
+        public = TestClient(app).get(f"/shared/{token}")
+        assert public.status_code == 200 and "Тихая бухта" in public.text and "ТОЛЬКО ПРОСМОТР" in public.text
+        detail = client.get(f"/memories/{memory_id}")
+        revoked = client.post(f"/memories/{memory_id}/share/delete", data={"csrf_token": csrf_from(detail)}, follow_redirects=False)
+        assert revoked.status_code == 303
+        assert TestClient(app).get(f"/shared/{token}").status_code == 404
 
 
 def csrf_from(response) -> str:
