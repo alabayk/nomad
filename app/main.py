@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -38,7 +38,8 @@ from app.auth import (
 from app.config import settings
 from app.database import create_database_schema, get_db
 from app.memories import router as memories_router
-from app.models import Memory, User, VisitedCountry, WishlistCountry
+from app.friends import router as friends_router
+from app.models import Friendship, Memory, User, VisitedCountry, WishlistCountry
 from app.photos import PhotoError, delete_local_photos, save_uploads
 
 APP_DIR = Path(__file__).resolve().parent
@@ -55,6 +56,7 @@ app = FastAPI(title=settings.app_name, version="0.3.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 app.include_router(memories_router)
+app.include_router(friends_router)
 
 
 def placeholder_page(
@@ -333,6 +335,7 @@ def delete_account(
         url for memory in user.memories for url in memory.photo_urls if url.startswith("/uploads/")
     ]
     user_id = user.id
+    db.execute(delete(Friendship).where(or_(Friendship.requester_id == user_id, Friendship.addressee_id == user_id)))
     db.delete(user)
     db.commit()
     delete_local_photos(user_id, photo_urls)

@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-    <link rel="stylesheet" href="/static/css/app.css?v=share-copy-3">
+    <link rel="stylesheet" href="/static/css/app.css?v=friends-core-1">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -34,6 +34,7 @@
         <a href="/timeline" {% if request.url.path == '/timeline' %}class="active"{% endif %}><span>{{ 'Timeline' if en else 'Лента' }}</span><small>{{ 'Journey chronology' if en else 'Хронология путешествий' }}</small></a>
         <a href="/countries" {% if request.url.path == '/countries' %}class="active"{% endif %}><span>{{ 'Visited countries' if en else 'Посещённые страны' }}</span><small>{{ 'Where I have been' if en else 'Где я уже был' }}</small></a>
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
+        <a href="/friends" {% if request.url.path == '/friends' %}class="active"{% endif %}><span>{{ 'Friends' if en else 'Друзья' }}</span><small>{{ 'Travel circle' if en else 'Круг путешественников' }}</small></a>
         {% endif %}
         <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, data management' if en else 'Язык, управление данными' }}</small></a>
       </nav>

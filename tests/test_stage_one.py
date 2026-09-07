@@ -35,6 +35,7 @@ def test_database_contains_stage_one_tables(tmp_path: Path) -> None:
     assert set(inspect(test_engine).get_table_names()) == {
         "auth_sessions",
         "country_shares",
+        "friendships",
         "geocode_cache",
         "memories",
         "memory_shares",
