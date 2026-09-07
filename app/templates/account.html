@@ -65,6 +65,12 @@
       {% endif %}
     </section>
   </div>
+  <section class="account-profile-privacy settings-privacy" id="privacy"><p class="eyebrow">{{ 'FRIENDS' if en else 'ДРУЗЬЯ' }}</p><h2>{{ 'Profile privacy' if en else 'Приватность профиля' }}</h2><p class="muted">{{ 'Choose what confirmed friends can see. Changes apply instantly.' if en else 'Выберите, что видят подтверждённые друзья. Изменения применяются сразу.' }}</p>
+    <div class="privacy-list">
+      {% set privacy_items = [('profile',user.privacy_profile,'Profile page','Страница профиля','Disabling it hides the entire profile','При отключении весь профиль станет недоступен'),('countries',user.privacy_countries,'Visited countries','Посещённые страны','Country names and their total','Названия стран и их количество'),('timeline',user.privacy_timeline,'Journey timeline','Лента путешествий','Memories, dates and travel chronology','Воспоминания, даты и хронология поездок'),('memories',user.privacy_memories,'Memory details','Содержание воспоминаний','Photos and descriptions inside the timeline','Фотографии и описания внутри ленты')] %}
+      {% for field,enabled,title_en,title_ru,text_en,text_ru in privacy_items %}<form method="post" action="/settings/privacy" class="privacy-row"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="field" value="{{ field }}"><input type="hidden" name="enabled" value="{{ '0' if enabled else '1' }}"><span><strong>{{ title_en if en else title_ru }}</strong><small>{{ text_en if en else text_ru }}</small></span><button type="submit" class="privacy-toggle {% if enabled %}active{% endif %}" aria-label="{{ title_en if en else title_ru }}" aria-pressed="{{ 'true' if enabled else 'false' }}"><i></i></button></form>{% endfor %}
+    </div><p class="privacy-footnote">{{ 'Country notes, account data and private links always remain hidden.' if en else 'Заметки стран, данные аккаунта и приватные ссылки скрыты всегда.' }}</p>
+  </section>
   <section class="account-danger">
     <div><h2>{{ 'Account management' if en else 'Управление аккаунтом' }}</h2><p>{{ 'Sign out or permanently delete the account and every memory.' if en else 'Можно выйти или навсегда удалить аккаунт вместе со всеми воспоминаниями.' }}</p></div>
     <div class="account-danger-actions">

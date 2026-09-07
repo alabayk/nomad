@@ -417,7 +417,7 @@ def update_privacy(request: Request, field: str = Form(...), enabled: str = Form
     if user is None: return RedirectResponse("/login", status_code=303)
     if valid_csrf_token(request, csrf_token) and field in allowed:
         setattr(user, allowed[field], enabled == "1"); db.commit()
-    return RedirectResponse("/settings#privacy", status_code=303)
+    return RedirectResponse("/account#privacy", status_code=303)
 
 
 def auth_form(
