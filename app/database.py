@@ -125,6 +125,14 @@ def create_database_schema() -> None:
                 text("INSERT INTO schema_migrations (version) VALUES (:version)"),
                 {"version": migration},
             )
+        user_columns = {column["name"] for column in inspect(connection).get_columns("users")}
+        migration = "007_friend_privacy"
+        if migration not in applied:
+            for column in ("privacy_profile", "privacy_countries", "privacy_timeline", "privacy_memories"):
+                if column not in user_columns:
+                    connection.execute(text(f"ALTER TABLE users ADD COLUMN {column} BOOLEAN DEFAULT TRUE"))
+                connection.execute(text(f"UPDATE users SET {column} = TRUE WHERE {column} IS NULL"))
+            connection.execute(text("INSERT INTO schema_migrations (version) VALUES (:version)"), {"version": migration})
 
 
 def get_db() -> Generator[Session, None, None]:

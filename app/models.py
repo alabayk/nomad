@@ -25,6 +25,10 @@ class User(Base):
     password_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     language: Mapped[str] = mapped_column(String(5), default="ru")
     theme: Mapped[str] = mapped_column(String(10), default="dark")
+    privacy_profile: Mapped[bool] = mapped_column(Boolean, default=True)
+    privacy_countries: Mapped[bool] = mapped_column(Boolean, default=True)
+    privacy_timeline: Mapped[bool] = mapped_column(Boolean, default=True)
+    privacy_memories: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     @property

@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml" sizes="any">
     <link rel="shortcut icon" href="/static/img/nomad-mark.svg?v=2" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/img/nomad-mark.svg?v=2">
-    <link rel="stylesheet" href="/static/css/app.css?v=friends-complete-1">
+    <link rel="stylesheet" href="/static/css/app.css?v=privacy-1">
     {% block head %}{% endblock %}
   </head>
   <body>
@@ -36,7 +36,7 @@
         <a href="/wishlist" {% if request.url.path == '/wishlist' %}class="active"{% endif %}><span>{{ 'Want to visit' if en else 'Хочу посетить' }}</span><small>{{ 'Future journeys' if en else 'Будущие маршруты' }}</small></a>
         <a href="/friends" {% if request.url.path.startswith('/friends') %}class="active"{% endif %}><span>{{ 'Friends' if en else 'Друзья' }} <b class="friend-request-badge" hidden>0</b></span><small>{{ 'Travel circle' if en else 'Круг путешественников' }}</small></a>
         {% endif %}
-        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, data management' if en else 'Язык, управление данными' }}</small></a>
+        <a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}><span>{{ 'Settings' if en else 'Настройки' }}</span><small>{{ 'Language, data, privacy' if en else 'Язык, данные, приватность' }}</small></a>
       </nav>
       <a class="menu-account" href="/account">
         <span class="menu-avatar" aria-hidden="true">{% if user and user.profile_photo_url %}<img src="{{ user.profile_photo_url }}" alt="">{% elif user %}{{ user.initials }}{% else %}<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.6-5 3.2-7 8-7s7.4 2 8 7"/></svg>{% endif %}</span>

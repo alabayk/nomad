@@ -410,6 +410,16 @@ def delete_travel_data(
     return RedirectResponse(f"/settings?saved={scope}", status_code=303)
 
 
+@app.post("/settings/privacy")
+def update_privacy(request: Request, field: str = Form(...), enabled: str = Form("0"), csrf_token: str = Form(...), db: Session = Depends(get_db)) -> RedirectResponse:
+    user = current_user(db, request)
+    allowed = {"profile": "privacy_profile", "countries": "privacy_countries", "timeline": "privacy_timeline", "memories": "privacy_memories"}
+    if user is None: return RedirectResponse("/login", status_code=303)
+    if valid_csrf_token(request, csrf_token) and field in allowed:
+        setattr(user, allowed[field], enabled == "1"); db.commit()
+    return RedirectResponse("/settings#privacy", status_code=303)
+
+
 def auth_form(
     request: Request,
     template_name: str,

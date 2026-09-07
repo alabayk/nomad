@@ -55,14 +55,15 @@ def friend_profile(username: str, request: Request, db: Session = Depends(get_db
     if not user: return _login()
     friend = db.scalar(select(User).where(User.username == username.strip().lower()))
     connection = _connection(db, user.id, friend.id) if friend and friend.id != user.id else None
-    if not friend or not connection or connection.status != "accepted":
+    if not friend or not connection or connection.status != "accepted" or not friend.privacy_profile:
         return templates.TemplateResponse(request=request, name="not_found.html", context={"user": user}, status_code=404)
     memories = list(db.scalars(select(Memory).where(Memory.user_id == friend.id).order_by(Memory.visit_date.desc(), Memory.id.desc())))
-    countries = list(db.scalars(select(VisitedCountry).where(VisitedCountry.user_id == friend.id).order_by(VisitedCountry.country_name)))
+    countries = list(db.scalars(select(VisitedCountry).where(VisitedCountry.user_id == friend.id).order_by(VisitedCountry.country_name))) if friend.privacy_countries else []
     return templates.TemplateResponse(request=request, name="friend_profile.html", context={
-        "user": user, "friend": friend, "memories": memories, "countries": countries,
-        "place_count": len({(item.location_name or item.place_name).strip().casefold() for item in memories}),
-        "years": len({item.visit_date.year for item in memories}),
+        "user": user, "friend": friend, "memories": memories if friend.privacy_timeline else [], "countries": countries,
+        "show_countries": friend.privacy_countries, "show_timeline": friend.privacy_timeline, "show_memory_details": friend.privacy_memories,
+        "place_count": len({(item.location_name or item.place_name).strip().casefold() for item in memories}) if friend.privacy_timeline else 0,
+        "years": len({item.visit_date.year for item in memories}) if friend.privacy_timeline else 0,
     })
 
 

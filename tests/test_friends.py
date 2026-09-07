@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.main import app
-from app.models import Friendship
+from app.models import Friendship, User
 
 
 def csrf(response):
@@ -32,8 +32,19 @@ def test_friend_request_accept_remove_and_no_duplicates(test_session_factory):
         accepted = bob.post(f"/friends/{connection_id}/accept", data={"csrf_token": csrf(inbox)}, follow_redirects=False)
         assert accepted.status_code == 303 and accepted.headers["location"].endswith("notice=accepted") and "Friend_Bob" in alice.get("/friends").text
         assert bob.get("/friends/pending-count").json()["count"] == 0
+        with test_session_factory() as db:
+            bob_user = db.scalar(select(User).where(User.username == "friend_bob"))
+            assert bob_user.privacy_profile and bob_user.privacy_countries and bob_user.privacy_timeline and bob_user.privacy_memories
         profile = alice.get("/friends/friend_bob")
         assert profile.status_code == 200 and "ПРОФИЛЬ ДРУГА" in profile.text
+        settings = bob.get("/settings")
+        bob.post("/settings/privacy", data={"field": "profile", "enabled": "0", "csrf_token": csrf(settings)})
+        assert alice.get("/friends/friend_bob").status_code == 404
+        settings = bob.get("/settings")
+        bob.post("/settings/privacy", data={"field": "profile", "enabled": "1", "csrf_token": csrf(settings)})
+        settings = bob.get("/settings")
+        bob.post("/settings/privacy", data={"field": "countries", "enabled": "0", "csrf_token": csrf(settings)})
+        assert "Скрыто настройками приватности" in alice.get("/friends/friend_bob").text
         assert alice.get("/friends/friend_alice").status_code == 404
         with TestClient(app) as stranger:
             register(stranger, "friend_stranger")
