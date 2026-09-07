@@ -45,6 +45,20 @@ def _load_country_choices() -> list[tuple[str, str]]:
 
 COUNTRY_CHOICES = _load_country_choices()
 COUNTRY_NAMES = dict(COUNTRY_CHOICES)
+RU_MONTHS = ("", "январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь")
+EN_MONTHS = ("", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+
+def _month_label(value: date, en: bool) -> str:
+    return f"{(EN_MONTHS if en else RU_MONTHS)[value.month]} {value.year}"
+
+
+def _country_source_label(country: VisitedCountry, has_memories: bool, en: bool) -> str:
+    if country.source == "manual" and has_memories:
+        return "manual + memories" if en else "вручную + из воспоминаний"
+    if country.source == "manual":
+        return "added manually" if en else "добавлено вручную"
+    return "from memories" if en else "из воспоминаний"
 
 
 def _redirect_to_login() -> RedirectResponse:
@@ -67,6 +81,7 @@ def _form_response(
     error: str | None = None,
     values: dict[str, object] | None = None,
     status_code: int = 200,
+    country_hint: tuple[str, str] | None = None,
 ) -> HTMLResponse:
     if user.language == "en":
         title = "Edit memory" if memory else "New memory"
@@ -86,6 +101,7 @@ def _form_response(
             ),
             "local_urls": local_photo_urls(memory.photo_urls) if memory else [],
             "csrf_token": csrf_token,
+            "country_hint": country_hint,
         },
         status_code=status_code,
     )
@@ -350,15 +366,20 @@ def dashboard(
 
 
 @router.get("/memories/new", response_class=HTMLResponse)
-def new_memory_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+def new_memory_page(request: Request, country: str = "", db: Session = Depends(get_db)) -> HTMLResponse:
     user = current_user(db, request)
     if user is None:
         return _redirect_to_login()
+    code = country.strip().upper()
+    visited = db.scalar(select(VisitedCountry).where(
+        VisitedCountry.user_id == user.id, VisitedCountry.country_code == code
+    )) if code in COUNTRY_NAMES else None
     return _form_response(
         request,
         user=user,
         title="Новое воспоминание",
         action="/memories",
+        country_hint=(visited.country_code, visited.country_name) if visited else None,
     )
 
 
@@ -661,8 +682,9 @@ def visited_countries_page(
                 {
                     "code": item.country_code,
                     "name": item.country_name,
-                    "source": (("from memories" if en else "из воспоминаний") if item.country_code in memory_country_codes else ("added manually" if en else "добавлено вручную")),
-                    "deletable": item.country_code not in memory_country_codes,
+                    "source": _country_source_label(item, item.country_code in memory_country_codes, en),
+                    "deletable": item.source == "manual" or item.country_code not in memory_country_codes,
+                    "detail_url": f"/countries/{item.country_code}",
                 }
                 for item in countries
             ],
@@ -671,6 +693,95 @@ def visited_countries_page(
     )
     set_csrf_cookie(response, csrf_token)
     return response
+
+
+@router.get("/countries/{country_code}", response_class=HTMLResponse)
+def country_detail_page(
+    country_code: str, request: Request, db: Session = Depends(get_db)
+) -> HTMLResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    code = country_code.strip().upper()
+    if code not in COUNTRY_NAMES:
+        return templates.TemplateResponse(
+            request=request, name="country_not_found.html", context={"user": user}, status_code=404
+        )
+    memories = list(db.scalars(
+        select(Memory).where(Memory.user_id == user.id, Memory.country_code == code)
+        .order_by(Memory.visit_date.desc(), Memory.id.desc())
+    ))
+    country = db.scalar(select(VisitedCountry).where(
+        VisitedCountry.user_id == user.id, VisitedCountry.country_code == code
+    ))
+    if country is None and memories:
+        country = VisitedCountry(
+            user_id=user.id, country_code=code,
+            country_name=memories[0].country_name or COUNTRY_NAMES[code], source="memory"
+        )
+        db.add(country)
+        db.commit()
+        db.refresh(country)
+    if country is None:
+        return templates.TemplateResponse(
+            request=request, name="country_not_found.html", context={"user": user}, status_code=404
+        )
+    en = user.language == "en"
+    unique_places = len({(item.location_name or item.place_name).strip().casefold() for item in memories})
+    photo_items = [
+        {"url": url, "memory_id": item.id, "place_name": item.place_name}
+        for item in memories for url in item.photo_urls
+    ]
+    map_memories = [
+        {"id": item.id, "name": item.place_name, "longitude": item.longitude, "latitude": item.latitude}
+        for item in memories
+    ]
+    csrf_token = csrf_token_for_request(request)
+    response = templates.TemplateResponse(
+        request=request,
+        name="country_detail.html",
+        context={
+            "user": user,
+            "country": country,
+            "memories": memories,
+            "memory_count": len(memories),
+            "unique_places": unique_places,
+            "first_visit": _month_label(memories[-1].visit_date, en) if memories else None,
+            "last_visit": _month_label(memories[0].visit_date, en) if memories else None,
+            "timeline": [{"memory": item, "date_label": _month_label(item.visit_date, en)} for item in memories],
+            "photo_items": photo_items,
+            "map_memories": map_memories,
+            "source_label": _country_source_label(country, bool(memories), en),
+            "is_wishlist": db.scalar(select(WishlistCountry.id).where(
+                WishlistCountry.user_id == user.id, WishlistCountry.country_code == code
+            )) is not None,
+            "can_remove_manual": country.source == "manual",
+            "csrf_token": csrf_token,
+        },
+    )
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+@router.post("/countries/{country_code}/note")
+def update_country_note(
+    country_code: str,
+    request: Request,
+    note: str = Form(""),
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    user = current_user(db, request)
+    if user is None:
+        return _redirect_to_login()
+    code = country_code.strip().upper()
+    country = db.scalar(select(VisitedCountry).where(
+        VisitedCountry.user_id == user.id, VisitedCountry.country_code == code
+    ))
+    if country and valid_csrf_token(request, csrf_token) and len(note) <= 2000:
+        country.note = note.strip()
+        db.commit()
+    return RedirectResponse(f"/countries/{code}", status_code=303)
 
 
 @router.post("/countries")
@@ -714,8 +825,11 @@ def delete_visited_country(
             VisitedCountry.country_code == code,
         )
     )
-    if country and not has_memory:
-        db.delete(country)
+    if country:
+        if has_memory and country.source == "manual":
+            country.source = "memory"
+        elif not has_memory:
+            db.delete(country)
         db.commit()
     return RedirectResponse("/countries", status_code=303)
 

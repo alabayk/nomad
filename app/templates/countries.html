@@ -40,7 +40,7 @@
         {% for country in country_items %}
         <div class="country-row">
           <div>
-            <button class="country-focus-button" type="button" data-country-code="{{ country.code }}" title="{{ 'Show on map' if en else 'Показать на карте' }}">{{ country.name }}</button>
+            {% if country.detail_url %}<div class="country-row-title"><a class="country-page-link" href="{{ country.detail_url }}">{{ country.name }}</a><button class="country-focus-button country-zoom-button" type="button" data-country-code="{{ country.code }}" title="{{ 'Show on map' if en else 'Показать на карте' }}" aria-label="{{ 'Show on map' if en else 'Показать на карте' }} {{ country.name }}">⌖</button></div>{% else %}<button class="country-focus-button" type="button" data-country-code="{{ country.code }}" title="{{ 'Show on map' if en else 'Показать на карте' }}">{{ country.name }}</button>{% endif %}
             <small>{{ country.code }} · {{ country.source }}</small>
           </div>
           {% if country.deletable %}
@@ -69,6 +69,7 @@
   const actionQuestion = {{ (('Add “{name}” to your wishlist?' if page_mode == 'wishlist' else 'Add “{name}” to visited countries?') if en else ('Добавить страну «{name}» в список желаний?' if page_mode == 'wishlist' else 'Добавить страну «{name}» в посещённые?')) | tojson }};
   const alreadyLabel = {{ ('Already' if en else 'Уже') | tojson }};
   const addLabel = {{ ('Add' if en else 'Добавить') | tojson }};
+  const pageMode = {{ page_mode | tojson }};
   const selectedColor = {{ ('#f09a67' if page_mode == 'wishlist' else '#df714e') | tojson }};
   const selectedOutline = {{ ('#ffd0a8' if page_mode == 'wishlist' else '#ffb091') | tojson }};
   let countriesData;
@@ -200,6 +201,11 @@
       const code = properties.ISO_A2_EH || properties.ISO_A2 || '';
           const name = {{ 'properties.ADMIN || properties.NAME_RU || code' if en else 'properties.NAME_RU || properties.ADMIN || code' }};
       if (!code || code === '-99') return;
+
+      if (pageMode === 'visited' && visitedCodes.includes(code)) {
+        window.location.assign(`/countries/${encodeURIComponent(code)}`);
+        return;
+      }
 
       actionPopup?.remove();
       const content = document.createElement('div');

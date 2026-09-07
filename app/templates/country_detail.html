@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ country.country_name }} — Nomad{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css">{% endblock %}
+{% block content %}
+<article class="country-detail-page">
+  <nav class="country-detail-nav"><a href="/countries">← {{ 'Visited countries' if en else 'Посещённые страны' }}</a><a href="/memories/new?country={{ country.country_code }}">+ {{ 'Add a memory' if en else 'Добавить воспоминание' }}</a></nav>
+  <header class="country-detail-hero">
+    <div><p class="eyebrow">{{ country.country_code }} · {{ source_label }}</p><h1>{{ country.country_name }}</h1></div>
+    <div class="country-statuses"><span>{{ 'Visited' if en else 'Посещено' }}</span>{% if is_wishlist %}<span class="wishlist-status">{{ 'Want to visit again' if en else 'Хочу посетить' }}</span>{% endif %}</div>
+  </header>
+
+  <section class="country-stat-grid" aria-label="{{ 'Country statistics' if en else 'Статистика страны' }}">
+    <div><strong>{{ memory_count }}</strong><span>{{ 'memories' if en else 'воспоминаний' }}</span></div>
+    <div><strong>{{ unique_places }}</strong><span>{{ 'places' if en else 'мест' }}</span></div>
+    <div><strong>{{ first_visit or '—' }}</strong><span>{{ 'first visit' if en else 'первая поездка' }}</span></div>
+    <div><strong>{{ last_visit or '—' }}</strong><span>{{ 'latest visit' if en else 'последняя поездка' }}</span></div>
+  </section>
+
+  <section class="country-map-section">
+    <div class="map-frame-label"><span>01</span>{{ 'Country and places' if en else 'Страна и места' }}</div>
+    <div id="country-detail-map" aria-label="{{ 'Map of' if en else 'Карта страны' }} {{ country.country_name }}"></div>
+  </section>
+
+  <div class="country-detail-content">
+    <section class="country-timeline">
+      <div class="country-section-heading"><p class="eyebrow">02 · {{ 'Chronology' if en else 'Хронология' }}</p><h2>{{ 'Memories' if en else 'Воспоминания' }}</h2></div>
+      {% for item in timeline %}
+      <a class="country-timeline-item" href="/memories/{{ item.memory.id }}">
+        <time>{{ item.date_label }}</time>
+        <div><h3>{{ item.memory.place_name }}</h3><p>{{ item.memory.location_name or item.memory.place_name }}</p></div>
+        <span>↗</span>
+      </a>
+      {% else %}<div class="country-empty"><p>{{ 'The country is marked manually. Add its first memory.' if en else 'Страна отмечена вручную. Добавьте первое воспоминание о ней.' }}</p><a class="button-link" href="/memories/new?country={{ country.country_code }}">{{ 'Add a memory' if en else 'Добавить воспоминание' }}</a></div>{% endfor %}
+    </section>
+
+    <aside class="country-note-panel">
+      <p class="eyebrow">03 · {{ 'Personal note' if en else 'Личная заметка' }}</p>
+      <form method="post" action="/countries/{{ country.country_code }}/note">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <textarea name="note" maxlength="2000" rows="9" placeholder="{{ 'What do you associate with this country?' if en else 'Что для вас связано с этой страной?' }}">{{ country.note or '' }}</textarea>
+        <button class="secondary" type="submit">{{ 'Save note' if en else 'Сохранить заметку' }}</button>
+      </form>
+      {% if can_remove_manual %}<form class="country-remove-origin" method="post" action="/countries/{{ country.country_code }}/delete" onsubmit="return confirm({{ ('Remove the manual mark? Memories will remain.' if en else 'Убрать ручную отметку? Воспоминания останутся.')|tojson }})"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="text-danger" type="submit">{{ 'Remove manual mark' if en else 'Убрать ручную отметку' }}</button></form>{% endif %}
+    </aside>
+  </div>
+
+  {% if photo_items %}<section class="country-photo-section"><div class="country-section-heading"><p class="eyebrow">04 · {{ 'Photo archive' if en else 'Фотоархив' }}</p><h2>{{ 'Moments from the journey' if en else 'Моменты путешествий' }}</h2></div><div class="country-photo-grid">{% for photo in photo_items %}<a href="/memories/{{ photo.memory_id }}"><img src="{{ photo.url }}" alt="{{ photo.place_name }}" loading="lazy"><span>{{ photo.place_name }}</span></a>{% endfor %}</div></section>{% endif %}
+</article>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/maplibre/maplibre-gl.js"></script>
+<script>
+  const countryCode={{ country.country_code|tojson }},memoryPoints={{ map_memories|tojson }};
+  const countryMap=new maplibregl.Map({container:'country-detail-map',style:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#061817'}}]},center:[0,20],zoom:1,attributionControl:false});
+  countryMap.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  function collectCountryCoordinates(value,points){if(typeof value[0]==='number'){points.push(value);return}value.forEach(part=>collectCountryCoordinates(part,points))}
+  countryMap.on('load',async()=>{const response=await fetch('/static/data/countries.geojson'),data=await response.json();countryMap.addSource('countries',{type:'geojson',data});countryMap.addLayer({id:'base',type:'fill',source:'countries',paint:{'fill-color':'#102d2a','fill-opacity':1,'fill-outline-color':'#38534d'}});countryMap.addLayer({id:'borders',type:'line',source:'countries',paint:{'line-color':'#4d6b63','line-opacity':.64,'line-width':.65}});countryMap.addLayer({id:'selected',type:'fill',source:'countries',filter:['==',['get','ISO_A2_EH'],countryCode],paint:{'fill-color':'#df714e','fill-opacity':.92,'fill-outline-color':'#ffb091'}});countryMap.addLayer({id:'selected-border',type:'line',source:'countries',filter:['==',['get','ISO_A2_EH'],countryCode],paint:{'line-color':'#ffb091','line-width':1.35,'line-opacity':.92}});const feature=data.features.find(item=>(item.properties.ISO_A2_EH||item.properties.ISO_A2)===countryCode);if(feature){const points=[];collectCountryCoordinates(feature.geometry.coordinates,points);const normal=points.map(point=>point[0]),wrapped=normal.map(value=>value<0?value+360:value),span=values=>Math.max(...values)-Math.min(...values),useWrapped=span(wrapped)<span(normal),bounds=new maplibregl.LngLatBounds();points.forEach(([lng,lat])=>bounds.extend([useWrapped&&lng<0?lng+360:lng,lat]));countryMap.fitBounds(bounds,{padding:55,maxZoom:5.4,duration:0})}memoryPoints.forEach(item=>{const marker=document.createElement('a');marker.className='country-memory-marker';marker.href=`/memories/${item.id}`;marker.title=item.name;new maplibregl.Marker({element:marker}).setLngLat([item.longitude,item.latitude]).addTo(countryMap)})});
+</script>
+{% endblock %}

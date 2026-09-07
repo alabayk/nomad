@@ -10,6 +10,7 @@
     <a href="{% if memory %}/memories/{{ memory.id }}{% else %}/dashboard{% endif %}">{{ 'Cancel' if en else 'Отмена' }}</a>
   </div>
   {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+  {% if country_hint %}<div class="country-form-hint"><span>{{ country_hint[1] }}</span>{{ 'Choose a location inside this country; the final country is determined from the map point.' if en else 'Выберите место внутри этой страны — итоговая страна определяется по точке на карте.' }}</div>{% endif %}
   <form method="post" action="{{ action }}" enctype="multipart/form-data" class="memory-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="latitude" id="selected-latitude" value="{{ values.get('latitude', memory.latitude if memory else '') }}">

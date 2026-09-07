@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Страна не найдена — Nomad{% endblock %}
+{% block content %}<section class="auth-card"><a class="auth-back" href="/countries">← {{ 'Back' if en else 'Назад' }}</a><p class="eyebrow">404</p><h1>{{ 'Country not found' if en else 'Страна не найдена' }}</h1><p class="muted">{{ 'Mark it on the visited countries map first.' if en else 'Сначала отметьте её на карте посещённых стран.' }}</p></section>{% endblock %}

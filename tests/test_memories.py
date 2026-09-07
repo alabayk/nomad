@@ -264,3 +264,62 @@ def test_manual_country_survives_memories_but_memory_only_country_does_not(
 
         remaining = list(db.scalars(select(VisitedCountry)))
         assert [(item.country_code, item.source) for item in remaining] == [("FR", "manual")]
+
+
+def test_country_page_aggregates_memories_and_saves_private_note(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "country_page_user")
+        with test_session_factory() as db:
+            user_id = db.scalar(select(User.id).where(User.username == "country_page_user"))
+            db.add(VisitedCountry(user_id=user_id, country_code="FR", country_name="Франция", source="manual"))
+            db.add_all([
+                Memory(user_id=user_id, place_name="Весна в Париже", location_name="Париж", latitude=48.85, longitude=2.35, visit_date=date(2024, 4, 1), country_code="FR", country_name="Франция", photo_urls=["https://example.com/paris.jpg"]),
+                Memory(user_id=user_id, place_name="Лазурный берег", location_name="Ницца", latitude=43.71, longitude=7.26, visit_date=date(2025, 8, 1), country_code="FR", country_name="Франция"),
+            ])
+            db.commit()
+
+        page = client.get("/countries/FR")
+        assert page.status_code == 200
+        assert "Весна в Париже" in page.text and "Лазурный берег" in page.text
+        assert "апрель 2024" in page.text and "август 2025" in page.text
+        assert "вручную + из воспоминаний" in page.text
+        saved = client.post("/countries/FR/note", data={
+            "note": "Вернуться осенью", "csrf_token": csrf_from(page),
+        }, follow_redirects=False)
+        assert saved.status_code == 303
+        assert "Вернуться осенью" in client.get("/countries/FR").text
+        assert "Франция" in client.get("/memories/new?country=FR").text
+
+
+def test_removing_manual_country_origin_preserves_memories(test_session_factory) -> None:
+    with TestClient(app) as client:
+        register(client, "origin_user")
+        with test_session_factory() as db:
+            user_id = db.scalar(select(User.id).where(User.username == "origin_user"))
+            db.add(VisitedCountry(user_id=user_id, country_code="DE", country_name="Германия", source="manual"))
+            db.add(Memory(user_id=user_id, place_name="Берлин", location_name="Берлин", latitude=52.52, longitude=13.4, visit_date=date(2025, 3, 1), country_code="DE", country_name="Германия"))
+            db.commit()
+        page = client.get("/countries/DE")
+        removed = client.post("/countries/DE/delete", data={"csrf_token": csrf_from(page)}, follow_redirects=False)
+        assert removed.status_code == 303
+
+    with test_session_factory() as db:
+        country = db.scalar(select(VisitedCountry).where(VisitedCountry.country_code == "DE"))
+        assert country is not None and country.source == "memory"
+        assert db.scalar(select(Memory).where(Memory.country_code == "DE")) is not None
+
+
+def test_country_page_requires_visited_mark_and_is_user_scoped(test_session_factory) -> None:
+    with TestClient(app) as owner:
+        register(owner, "country_owner")
+        with test_session_factory() as db:
+            owner_id = db.scalar(select(User.id).where(User.username == "country_owner"))
+            db.add(VisitedCountry(user_id=owner_id, country_code="JP", country_name="Япония", source="manual", note="Private"))
+            db.commit()
+        assert owner.get("/countries/JP").status_code == 200
+
+    with TestClient(app) as stranger:
+        register(stranger, "country_stranger")
+        page = stranger.get("/countries/JP")
+        assert page.status_code == 404
+        assert "Private" not in page.text

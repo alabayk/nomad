@@ -86,6 +86,7 @@ class VisitedCountry(Base):
     country_code: Mapped[str] = mapped_column(String(2), nullable=False, index=True)
     country_name: Mapped[str] = mapped_column(String(100), nullable=False)
     source: Mapped[str] = mapped_column(String(20), default="manual")
+    note: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     user: Mapped[User] = relationship(back_populates="visited_countries")

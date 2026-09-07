@@ -113,6 +113,18 @@ def create_database_schema() -> None:
                 text("INSERT INTO schema_migrations (version) VALUES (:version)"),
                 {"version": migration},
             )
+        visited_columns = {
+            column["name"] for column in inspect(connection).get_columns("visited_countries")
+        }
+        migration = "006_country_notes"
+        if migration not in applied:
+            if "note" not in visited_columns:
+                connection.execute(text("ALTER TABLE visited_countries ADD COLUMN note TEXT DEFAULT ''"))
+            connection.execute(text("UPDATE visited_countries SET note = '' WHERE note IS NULL"))
+            connection.execute(
+                text("INSERT INTO schema_migrations (version) VALUES (:version)"),
+                {"version": migration},
+            )
 
 
 def get_db() -> Generator[Session, None, None]:
