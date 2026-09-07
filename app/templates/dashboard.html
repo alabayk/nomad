@@ -21,7 +21,7 @@
     </div>
   </header>
 
-  <form class="filters" id="memory-filters" method="get" action="/dashboard">
+  <form class="filters timeline-filters places-filters" id="memory-filters" method="get" action="/dashboard" data-filter-label="{{ 'PLACE FILTERS' if en else 'ФИЛЬТРЫ МЕСТ' }}">
     <label>{{ 'Year' if en else 'Год' }}
       <select name="year" id="filter-year">
         <option value="">{{ 'All years' if en else 'Все годы' }}</option>
