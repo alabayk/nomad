@@ -39,7 +39,10 @@ def test_friend_request_accept_remove_and_no_duplicates(test_session_factory):
         assert profile.status_code == 200 and "ПРОФИЛЬ ДРУГА" in profile.text
         settings = bob.get("/settings")
         bob.post("/settings/privacy", data={"field": "profile", "enabled": "0", "csrf_token": csrf(settings)})
-        assert alice.get("/friends/friend_bob").status_code == 404
+        hidden = alice.get("/friends/friend_bob")
+        assert hidden.status_code == 403
+        assert "Профиль скрыт" in hidden.text
+        assert "настройках приватности" in hidden.text
         settings = bob.get("/settings")
         bob.post("/settings/privacy", data={"field": "profile", "enabled": "1", "csrf_token": csrf(settings)})
         settings = bob.get("/settings")

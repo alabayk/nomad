@@ -55,8 +55,10 @@ def friend_profile(username: str, request: Request, db: Session = Depends(get_db
     if not user: return _login()
     friend = db.scalar(select(User).where(User.username == username.strip().lower()))
     connection = _connection(db, user.id, friend.id) if friend and friend.id != user.id else None
-    if not friend or not connection or connection.status != "accepted" or not friend.privacy_profile:
+    if not friend or not connection or connection.status != "accepted":
         return templates.TemplateResponse(request=request, name="not_found.html", context={"user": user}, status_code=404)
+    if not friend.privacy_profile:
+        return templates.TemplateResponse(request=request, name="friend_private.html", context={"user": user}, status_code=403)
     memories = list(db.scalars(select(Memory).where(Memory.user_id == friend.id).order_by(Memory.visit_date.desc(), Memory.id.desc())))
     countries = list(db.scalars(select(VisitedCountry).where(VisitedCountry.user_id == friend.id).order_by(VisitedCountry.country_name))) if friend.privacy_countries else []
     return templates.TemplateResponse(request=request, name="friend_profile.html", context={

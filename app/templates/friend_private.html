@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Private profile' if en else 'Профиль скрыт' }} — Nomad{% endblock %}
+{% block content %}
+<section class="private-profile-card">
+  <a class="detail-nav" href="/friends">← {{ 'Friends' if en else 'Друзья' }}</a>
+  <div class="private-profile-symbol" aria-hidden="true"><span></span></div>
+  <p class="eyebrow">{{ 'PRIVACY' if en else 'ПРИВАТНОСТЬ' }}</p>
+  <h1>{{ 'Profile is private' if en else 'Профиль скрыт' }}</h1>
+  <p class="private-profile-copy">{{ 'This user has restricted access to their profile in privacy settings.' if en else 'Этот пользователь ограничил доступ к профилю в настройках приватности.' }}</p>
+  <a class="button-link" href="/friends">{{ 'Back to friends' if en else 'Вернуться к друзьям' }}</a>
+</section>
+{% endblock %}
