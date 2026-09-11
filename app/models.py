@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+import os
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,6 +38,11 @@ class User(Base):
         if parts:
             return "".join(part[0] for part in parts[:2]).upper()
         return self.username[:2].upper()
+
+    @property
+    def is_admin(self) -> bool:
+        allowed = {item.strip().lower() for item in os.getenv("ADMIN_USERNAMES", "").split(",") if item.strip()}
+        return self.username.lower() in allowed
 
     memories: Mapped[list[Memory]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

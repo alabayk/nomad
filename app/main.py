@@ -39,6 +39,7 @@ from app.config import settings
 from app.database import create_database_schema, get_db
 from app.memories import router as memories_router
 from app.friends import router as friends_router
+from app.admin import router as admin_router
 from app.models import Friendship, Memory, User, VisitedCountry, WishlistCountry
 from app.photos import PhotoError, delete_local_photos, save_uploads
 
@@ -57,6 +58,7 @@ app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 app.include_router(memories_router)
 app.include_router(friends_router)
+app.include_router(admin_router)
 
 
 def placeholder_page(
